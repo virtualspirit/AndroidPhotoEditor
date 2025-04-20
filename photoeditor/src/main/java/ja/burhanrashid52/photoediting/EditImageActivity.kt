@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Typeface
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
@@ -25,6 +26,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -35,16 +37,20 @@ import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.yalantis.ucrop.UCrop
+import com.yalantis.ucrop.UCropFragment
+import com.yalantis.ucrop.UCropFragmentCallback
+import com.yalantis.ucrop.callback.BitmapCropCallback
 import ja.burhanrashid52.photoediting.EmojiBSFragment.EmojiListener
 import ja.burhanrashid52.photoediting.StickerBSFragment.StickerListener
 import ja.burhanrashid52.photoediting.base.BaseActivity
+import ja.burhanrashid52.photoediting.constant.ResponseCode
 import ja.burhanrashid52.photoediting.filters.FilterListener
 import ja.burhanrashid52.photoediting.filters.FilterViewAdapter
 import ja.burhanrashid52.photoediting.tools.EditingToolsAdapter
 import ja.burhanrashid52.photoediting.tools.EditingToolsAdapter.OnItemSelected
 import ja.burhanrashid52.photoediting.tools.ToolType
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import ja.burhanrashid52.photoediting.constant.ResponseCode
 import ja.burhanrashid52.photoeditor.OnPhotoEditorListener
 import ja.burhanrashid52.photoeditor.PhotoEditor
 import ja.burhanrashid52.photoeditor.PhotoEditorView
@@ -58,7 +64,9 @@ import ja.burhanrashid52.photoeditor.shape.ShapeBuilder
 import ja.burhanrashid52.photoeditor.shape.ShapeType
 import kotlinx.coroutines.launch
 import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
+import kotlin.math.log
 
 class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickListener,
     PropertiesBSFragment.Properties, ShapeBSFragment.Properties, EmojiListener, StickerListener,
@@ -83,6 +91,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     private val mConstraintSet = ConstraintSet()
     private var mIsFilterVisible = false
     private var isModule = true
+    private var sourceUri: Uri? = null
 
     @VisibleForTesting
     var mSaveImageUri: Uri? = null
@@ -177,6 +186,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
                         dataSource: DataSource,
                         isFirstResource: Boolean
                     ): Boolean {
+                        sourceUri = getImageUri(resource);
                         return false
                     }
                 })
@@ -184,6 +194,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         } else {
             //Set Image Dynamically
             isModule = false
+            sourceUri = getImageUri(applicationContext.getDrawable(R.drawable.paris_tower));
             mPhotoEditorView.source.setImageResource(R.drawable.paris_tower)
         }
 
@@ -269,6 +280,10 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
             if ("circle" in tools) {
                 mShapeBSFragment.addShape("oval")
             }
+        }
+
+        if ("clip" in tools) {
+            mEditingToolsAdapter.addTool("clip")
         }
 
         if ("textSticker" in tools) {
@@ -454,11 +469,22 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == RESULT_OK) {
+            Log.d("RESULT", resultCode.toString())
+            Log.d("REQUEST", requestCode.toString())
             when (requestCode) {
                 CAMERA_REQUEST -> {
                     mPhotoEditor.clearAllViews()
                     val photo = data?.extras?.get("data") as Bitmap?
                     mPhotoEditorView.source.setImageBitmap(photo)
+                }
+
+                69 -> try {
+                    val bitmap = MediaStore.Images.Media.getBitmap(
+                        contentResolver, sourceUri
+                    )
+                    mPhotoEditorView.source.setImageBitmap(bitmap)
+                } catch (e: IOException) {
+                    e.printStackTrace()
                 }
 
                 PICK_REQUEST -> try {
@@ -565,8 +591,28 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
 
             ToolType.EMOJI -> showBottomSheetDialogFragment(mEmojiBSFragment)
             ToolType.STICKER -> showBottomSheetDialogFragment(mStickerBSFragment)
+            ToolType.CLIP -> {
+                sourceUri?.let {
+                    UCrop.of(it, it)
+                        .withMaxResultSize(2048, 2048)
+                        .start(this)
+                };
+            }
         }
     }
+
+//    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+//        super.onActivityResult(requestCode, resultCode, data)
+//
+//        if (resultCode == Activity.RESULT_OK && requestCode == UCrop.REQUEST_CROP) {
+//            val resultUri: Uri? = data?.let { UCrop.getOutput(it) }
+//            // Handle the cropped image URI
+//            mPhotoEditorView.source = resultUri
+//        } else if (resultCode == UCrop.RESULT_ERROR) {
+//            val cropError: Throwable? = data?.let { UCrop.getError(it) }
+//            // Handle the crop error
+//        }
+//    }
 
     private fun showBottomSheetDialogFragment(fragment: BottomSheetDialogFragment?) {
         if (fragment == null || fragment.isAdded) {
@@ -621,6 +667,16 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         }
     }
 
+    fun getImageUri(image: Drawable?): Uri {
+        val bitmap = (image as BitmapDrawable).bitmap
+        val context = applicationContext;
+        val file = File(context.cacheDir, "image.png")
+        val outputStream = FileOutputStream(file)
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+        outputStream.close()
+        return file.toUri()
+    }
+
     companion object {
 
         private const val TAG = "EditImageActivity"
@@ -631,4 +687,5 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         const val ACTION_NEXTGEN_EDIT = "action_nextgen_edit"
         const val PINCH_TEXT_SCALABLE_INTENT_KEY = "PINCH_TEXT_SCALABLE"
     }
+
 }

@@ -6,5 +6,5 @@ package ja.burhanrashid52.photoediting.tools
  * @since 5/23/2018
  */
 enum class ToolType {
-    SHAPE, TEXT, ERASER, FILTER, EMOJI, STICKER
+    SHAPE, TEXT, ERASER, FILTER, EMOJI, STICKER, CLIP
 }

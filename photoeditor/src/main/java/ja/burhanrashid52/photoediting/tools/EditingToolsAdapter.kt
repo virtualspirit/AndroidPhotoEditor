@@ -64,6 +64,7 @@ class EditingToolsAdapter(private val mOnItemSelected: OnItemSelected) :
                 mToolList.add(ToolModel("Shape", R.drawable.ic_oval, ToolType.SHAPE))
                 mToolList.add(ToolModel("Eraser", R.drawable.ic_eraser, ToolType.ERASER))
             }
+            "clip" -> mToolList.add(ToolModel("Clip", R.drawable.ic_text, ToolType.CLIP))
             "text" -> mToolList.add(ToolModel("Text", R.drawable.ic_text, ToolType.TEXT))
             "filter" -> mToolList.add(ToolModel("Filter", R.drawable.ic_photo_filter, ToolType.FILTER))
             "emoji" -> mToolList.add(ToolModel("Emoji", R.drawable.ic_insert_emoticon, ToolType.EMOJI))
