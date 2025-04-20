@@ -21,20 +21,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         findViewById<Button>(R.id.button).setOnClickListener {
-//            val path = options?.getString("path")
-//            val stickers = options?.getArray("stickers") as ReadableArray
-
             val intent = Intent(applicationContext, EditImageActivity::class.java)
 
 
             intent.putExtra("path", "https://virtualspirit.me/assets/front-end/software-development@2x-93c79cac29e995da260cb38bafb3fc19b8d5307ac7f4c719d62c658a004ba701.png")
 
             startActivity(intent)
-
-
-//            startActivityForResult(intent, 1)
-
-//            startActivity(Intent(this, EditImageActivity::class.java))
         }
     }
 }

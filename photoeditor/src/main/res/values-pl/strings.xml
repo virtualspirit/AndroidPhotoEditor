@@ -17,5 +17,6 @@
     <string name="app_intent_name">PhotoEditor</string>
     <string name="msg_save_image_to_share">Zapisz obraz, aby udostępnić</string>
     <string name="msg_share_image">Udostępnij</string>
+    <string name="label_done">Done</string>
 
 </resources>

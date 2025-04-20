@@ -14,6 +14,7 @@ import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.animation.AnticipateOvershootInterpolator
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.annotation.RequiresPermission
@@ -190,8 +191,8 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         val imgGallery: ImageView = findViewById(R.id.imgGallery)
         imgGallery.setOnClickListener(this)
 
-        val imgSave: ImageView = findViewById(R.id.imgSave)
-        imgSave.setOnClickListener(this)
+        val btnDone: Button = findViewById(R.id.btnDone)
+        btnDone.setOnClickListener(this)
 
         val imgClose: ImageView = findViewById(R.id.imgClose)
         imgClose.setOnClickListener(this)
@@ -259,7 +260,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
                 mImgRedo.isEnabled = mPhotoEditor.redo()
             }
 
-            R.id.imgSave -> saveImage()
+            R.id.btnDone -> saveImage()
             R.id.imgClose -> onBackPressed()
             R.id.imgShare -> shareImage()
             R.id.imgCamera -> {
@@ -456,8 +457,13 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
             }
 
             ToolType.FILTER -> {
-                mTxtCurrentTool.setText(R.string.label_filter)
-                showFilter(true)
+                if (mIsFilterVisible) {
+                    showFilter(false)
+                    mTxtCurrentTool.setText(R.string.app_name)
+                } else {
+                    mTxtCurrentTool.setText(R.string.label_filter)
+                    showFilter(true)
+                }
             }
 
             ToolType.EMOJI -> showBottomSheetDialogFragment(mEmojiBSFragment)
@@ -505,10 +511,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     }
 
     override fun onBackPressed() {
-        if (mIsFilterVisible) {
-            showFilter(false)
-            mTxtCurrentTool.setText(R.string.app_name)
-        } else if (!mPhotoEditor.isCacheEmpty) {
+       if (!mPhotoEditor.isCacheEmpty) {
             showSaveDialog()
         } else {
             super.onBackPressed()
