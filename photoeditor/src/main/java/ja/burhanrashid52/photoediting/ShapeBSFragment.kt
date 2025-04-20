@@ -1,9 +1,11 @@
 package ja.burhanrashid52.photoediting
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.SeekBar
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -15,6 +17,14 @@ import ja.burhanrashid52.photoeditor.shape.ShapeType
 
 class ShapeBSFragment : BottomSheetDialogFragment(), SeekBar.OnSeekBarChangeListener {
     private var mProperties: Properties? = null
+    private lateinit var mBrushRadioButton: RadioButton
+    private lateinit var mLineRadioButton: RadioButton
+    private lateinit var mArrowRadioButton: RadioButton
+    private lateinit var mRectRadioButton: RadioButton
+    private lateinit var mOvalRadioButton: RadioButton
+
+    private var shapeTools: MutableList<String> = mutableListOf() // arrayOf("draw", "line", "arrow", "square", "circle")
+
 
     interface Properties {
         fun onColorChanged(colorCode: Int)
@@ -37,6 +47,11 @@ class ShapeBSFragment : BottomSheetDialogFragment(), SeekBar.OnSeekBarChangeList
         val sbOpacity = view.findViewById<SeekBar>(R.id.shapeOpacity)
         val sbBrushSize = view.findViewById<SeekBar>(R.id.shapeSize)
         val shapeGroup = view.findViewById<RadioGroup>(R.id.shapeRadioGroup)
+        mBrushRadioButton = view.findViewById(R.id.brushRadioButton)
+        mLineRadioButton = view.findViewById(R.id.lineRadioButton)
+        mArrowRadioButton = view.findViewById(R.id.arrowRadioButton)
+        mRectRadioButton = view.findViewById(R.id.rectRadioButton)
+        mOvalRadioButton = view.findViewById(R.id.ovalRadioButton)
 
         // shape picker
         shapeGroup.setOnCheckedChangeListener { _: RadioGroup?, checkedId: Int ->
@@ -58,6 +73,43 @@ class ShapeBSFragment : BottomSheetDialogFragment(), SeekBar.OnSeekBarChangeList
                 }
             }
         }
+
+        shapeTools.forEachIndexed { index, tool ->
+            when (tool) {
+                "draw" -> {
+                    mBrushRadioButton.visibility = View.VISIBLE
+                    if (index == 0) {
+                        mBrushRadioButton.isChecked = true
+                    }
+                }
+                "line" -> {
+                    mLineRadioButton.visibility = View.VISIBLE
+                    if (index == 0) {
+                        mLineRadioButton.isChecked = true
+                    }
+                }
+                "arrow" -> {
+                    mArrowRadioButton.visibility = View.VISIBLE
+                    if (index == 0) {
+                        mArrowRadioButton.isChecked = true
+                    }
+                }
+                "rect" -> {
+                    mRectRadioButton.visibility = View.VISIBLE
+                    if (index == 0) {
+                        mRectRadioButton.isChecked = true
+                    }
+                }
+                "oval" -> {
+                    mOvalRadioButton.visibility = View.VISIBLE
+                    if (index == 0) {
+                        mOvalRadioButton.isChecked = true
+                    }
+                }
+            }
+        }
+
+
         sbOpacity.setOnSeekBarChangeListener(this)
         sbBrushSize.setOnSeekBarChangeListener(this)
 
@@ -97,4 +149,8 @@ class ShapeBSFragment : BottomSheetDialogFragment(), SeekBar.OnSeekBarChangeList
     override fun onStartTrackingTouch(seekBar: SeekBar) = Unit
 
     override fun onStopTrackingTouch(seekBar: SeekBar) = Unit
+
+    fun addShape(shape: String) {
+        shapeTools.add(shape)
+    }
 }

@@ -1,5 +1,6 @@
 package ja.burhanrashid52.photoediting.tools
 
+import android.app.Activity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -57,12 +58,25 @@ class EditingToolsAdapter(private val mOnItemSelected: OnItemSelected) :
         }
     }
 
+    fun addTool(tool: String) {
+        when (tool) {
+            "shape" -> {
+                mToolList.add(ToolModel("Shape", R.drawable.ic_oval, ToolType.SHAPE))
+                mToolList.add(ToolModel("Eraser", R.drawable.ic_eraser, ToolType.ERASER))
+            }
+            "text" -> mToolList.add(ToolModel("Text", R.drawable.ic_text, ToolType.TEXT))
+            "filter" -> mToolList.add(ToolModel("Filter", R.drawable.ic_photo_filter, ToolType.FILTER))
+            "emoji" -> mToolList.add(ToolModel("Emoji", R.drawable.ic_insert_emoticon, ToolType.EMOJI))
+            "sticker" -> mToolList.add(ToolModel("Sticker", R.drawable.ic_sticker, ToolType.STICKER))
+        }
+    }
+
     init {
-        mToolList.add(ToolModel("Shape", R.drawable.ic_oval, ToolType.SHAPE))
-        mToolList.add(ToolModel("Text", R.drawable.ic_text, ToolType.TEXT))
-        mToolList.add(ToolModel("Eraser", R.drawable.ic_eraser, ToolType.ERASER))
-        mToolList.add(ToolModel("Filter", R.drawable.ic_photo_filter, ToolType.FILTER))
-        mToolList.add(ToolModel("Emoji", R.drawable.ic_insert_emoticon, ToolType.EMOJI))
-        mToolList.add(ToolModel("Sticker", R.drawable.ic_sticker, ToolType.STICKER))
+//        mToolList.add(ToolModel("Shape", R.drawable.ic_oval, ToolType.SHAPE))
+//        mToolList.add(ToolModel("Text", R.drawable.ic_text, ToolType.TEXT))
+//        mToolList.add(ToolModel("Eraser", R.drawable.ic_eraser, ToolType.ERASER))
+//        mToolList.add(ToolModel("Filter", R.drawable.ic_photo_filter, ToolType.FILTER))
+//        mToolList.add(ToolModel("Emoji", R.drawable.ic_insert_emoticon, ToolType.EMOJI))
+//        mToolList.add(ToolModel("Sticker", R.drawable.ic_sticker, ToolType.STICKER))
     }
 }

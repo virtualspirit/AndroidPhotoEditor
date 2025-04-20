@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Typeface
+import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
@@ -30,7 +31,10 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.transition.ChangeBounds
 import androidx.transition.TransitionManager
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
 import ja.burhanrashid52.photoediting.EmojiBSFragment.EmojiListener
 import ja.burhanrashid52.photoediting.StickerBSFragment.StickerListener
 import ja.burhanrashid52.photoediting.base.BaseActivity
@@ -40,6 +44,7 @@ import ja.burhanrashid52.photoediting.tools.EditingToolsAdapter
 import ja.burhanrashid52.photoediting.tools.EditingToolsAdapter.OnItemSelected
 import ja.burhanrashid52.photoediting.tools.ToolType
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import ja.burhanrashid52.photoediting.constant.ResponseCode
 import ja.burhanrashid52.photoeditor.OnPhotoEditorListener
 import ja.burhanrashid52.photoeditor.PhotoEditor
 import ja.burhanrashid52.photoeditor.PhotoEditorView
@@ -77,6 +82,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     private lateinit var mRootView: ConstraintLayout
     private val mConstraintSet = ConstraintSet()
     private var mIsFilterVisible = false
+    private var isModule = true
 
     @VisibleForTesting
     var mSaveImageUri: Uri? = null
@@ -127,17 +133,59 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
 
         val value = intent.extras
         val path = value?.getString("path")
+        var tools = arrayOf("draw", "clip",
+            "imageSticker",
+            "textSticker",
+            "mosaic",
+            "filter",
+            "adjust",
+            "line",
+            "arrow",
+            "square",
+            "circle")
+
+        value?.getStringArray("tools")?.let {
+            tools = it
+        }
+
+        initTools(tools)
 
         if (path != null) {
             Glide
                 .with(this)
                 .load(path)
+                .listener(object : RequestListener<Drawable>{
+                    override fun onLoadFailed(
+                        e: GlideException?,
+                        model: Any?,
+                        target: Target<Drawable>,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        if (isModule) {
+                            val intent = Intent()
+                            intent.putExtra("path", path)
+                            setResult(ResponseCode.LOAD_IMAGE_FAILED, intent)
+                            finish()
+                        }
+                        return false
+                    }
+
+                    override fun onResourceReady(
+                        resource: Drawable,
+                        model: Any,
+                        target: Target<Drawable>?,
+                        dataSource: DataSource,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        return false
+                    }
+                })
                 .into(mPhotoEditorView.source)
         } else {
             //Set Image Dynamically
+            isModule = false
             mPhotoEditorView.source.setImageResource(R.drawable.paris_tower)
         }
-
 
         mSaveFileHelper = FileSaveHelper(this)
     }
@@ -199,6 +247,41 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
 
         val imgShare: ImageView = findViewById(R.id.imgShare)
         imgShare.setOnClickListener(this)
+    }
+
+    private fun initTools(tools: Array<String>)  {
+        if ("draw" in tools || "line" in tools || "square" in tools || "circle" in tools || "arrow" in tools) {
+            mEditingToolsAdapter.addTool("shape")
+
+            // handle display shape here
+            if ("draw" in tools) {
+                mShapeBSFragment.addShape("draw")
+            }
+            if ("line" in tools) {
+                mShapeBSFragment.addShape("line")
+            }
+            if ("arrow" in tools) {
+                mShapeBSFragment.addShape("arrow")
+            }
+            if ("square" in tools) {
+                mShapeBSFragment.addShape("rect")
+            }
+            if ("circle" in tools) {
+                mShapeBSFragment.addShape("oval")
+            }
+        }
+
+        if ("textSticker" in tools) {
+            mEditingToolsAdapter.addTool("text")
+        }
+
+        if ("imageSticker" in tools) {
+            mEditingToolsAdapter.addTool("sticker")
+        }
+
+        if ("filter" in tools) {
+            mEditingToolsAdapter.addTool("filter")
+        }
     }
 
     override fun onEditTextChangeListener(rootView: View, text: String, colorCode: Int) {
@@ -331,13 +414,27 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
                             val result = mPhotoEditor.saveAsFile(filePath, saveSettings)
 
                             if (result is SaveFileResult.Success) {
-                                mSaveFileHelper.notifyThatFileIsNowPubliclyAvailable(contentResolver)
                                 hideLoading()
-                                showSnackbar("Image Saved Successfully")
-                                mSaveImageUri = uri
-                                mPhotoEditorView.source.setImageURI(mSaveImageUri)
+
+                                if (isModule) {
+                                    val intent = Intent()
+                                    intent.putExtra("path", filePath)
+                                    setResult(ResponseCode.RESULT_OK, intent)
+                                    finish()
+                                } else {
+                                    mSaveFileHelper.notifyThatFileIsNowPubliclyAvailable(contentResolver)
+                                    showSnackbar("Image Saved Successfully")
+                                    mSaveImageUri = uri
+                                    mPhotoEditorView.source.setImageURI(mSaveImageUri)
+                                }
                             } else {
                                 hideLoading()
+                                if (isModule) {
+                                    val intent = Intent()
+                                    intent.putExtra("path", filePath)
+                                    setResult(ResponseCode.FAILED_TO_SAVE, intent)
+                                    finish()
+                                }
                                 showSnackbar("Failed to save Image")
                             }
                         } else {
@@ -514,7 +611,13 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
        if (!mPhotoEditor.isCacheEmpty) {
             showSaveDialog()
         } else {
-            super.onBackPressed()
+            if (isModule) {
+                val intent = Intent()
+                setResult(ResponseCode.RESULT_CANCELED, intent)
+                finish()
+            } else {
+                super.onBackPressed()
+            }
         }
     }
 

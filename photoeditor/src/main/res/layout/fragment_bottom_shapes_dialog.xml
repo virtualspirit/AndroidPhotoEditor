@@ -10,7 +10,7 @@
         android:id="@+id/shapeRadioGroup"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center"
+        android:gravity="start"
         android:orientation="horizontal"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
@@ -21,30 +21,35 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:checked="true"
+            android:visibility="gone"
             android:text="@string/label_brush" />
 
         <RadioButton
             android:id="@+id/lineRadioButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:visibility="gone"
             android:text="@string/label_line" />
 
         <RadioButton
             android:id="@+id/arrowRadioButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:visibility="gone"
             android:text="@string/label_arrow" />
 
         <RadioButton
             android:id="@+id/ovalRadioButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:visibility="gone"
             android:text="@string/label_oval" />
 
         <RadioButton
             android:id="@+id/rectRadioButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:visibility="gone"
             android:text="@string/label_rectangle" />
 
     </RadioGroup>
