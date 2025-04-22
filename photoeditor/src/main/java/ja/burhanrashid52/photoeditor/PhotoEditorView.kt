@@ -69,7 +69,7 @@ class PhotoEditorView @JvmOverloads constructor(
     private fun setupImageSource(attrs: AttributeSet?): LayoutParams {
         mImgSource.id = imgSrcId
         mImgSource.adjustViewBounds = true
-        mImgSource.scaleType = ImageView.ScaleType.CENTER_INSIDE
+        mImgSource.scaleType = ImageView.ScaleType.FIT_CENTER
 
         attrs?.let {
             val a = context.obtainStyledAttributes(it, R.styleable.PhotoEditorView)

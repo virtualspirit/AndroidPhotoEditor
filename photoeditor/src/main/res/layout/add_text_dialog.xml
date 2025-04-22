@@ -7,20 +7,28 @@
     android:layout_height="match_parent"
     android:background="#B3000000">
 
-    <TextView
-        android:id="@+id/add_text_done_tv"
+    <Button
+        android:id="@+id/add_text_btnDone"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentRight="true"
-        android:background="@drawable/rounded_border_text_view"
-        android:padding="10dp"
-        android:text="Done"
-        android:textAllCaps="false"
-        android:textColor="@color/white"
-        android:textSize="15sp"
+        android:layout_height="40dp"
+        android:text="@string/label_done"
+        android:textColor="@color/btn_done_title"
+        android:background="@color/btn_done_background"
+        android:layout_marginTop="25dp"
+        android:layout_marginEnd="16dp"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/add_Text_btnCancel"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:text="@string/label_cancel"
+        android:textColor="@color/white"
+        android:background="@android:color/transparent"
+        android:layout_marginTop="25dp"
+        android:layout_marginStart="16dp"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <EditText
@@ -35,10 +43,13 @@
         android:singleLine="true"
         android:textColorPrimary="#FFFFFF"
         android:textSize="40sp"
+        android:focusedByDefault="true"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
         app:layout_constraintBottom_toTopOf="@+id/add_text_color_picker_recycler_view"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/add_text_done_tv"
+        app:layout_constraintTop_toBottomOf="@+id/add_text_btnDone"
         tools:visibility="visible" />
 
     <androidx.recyclerview.widget.RecyclerView

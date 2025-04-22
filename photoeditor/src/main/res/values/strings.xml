@@ -18,6 +18,7 @@
     <string name="msg_save_image_to_share">Please save image to share</string>
     <string name="msg_share_image">Share Image</string>
     <string name="label_done">Done</string>
+    <string name="label_cancel">Cancel</string>
 
     <string-array name="photo_editor_emoji">
 

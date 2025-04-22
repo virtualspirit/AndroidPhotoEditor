@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#3F51B5</color>
-    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorPrimary">#2D72CB</color>
+    <color name="colorPrimaryDark">#2D72CB</color>
     <color name="colorAccent">#FF4081</color>
+    <color name="editing_highlight_color">#2D72CB</color>
+
 
     <color name="black">#000000</color>
     <color name="white">#FFFFFF</color>
@@ -18,5 +20,14 @@
     <color name="yellow_green_color_picker">#C5E17A</color>
     <color name="tool_bg">#151414</color>
     <color name="semi_black_transparent">#99000000</color>
+    <color name="tool_highlight_color">@color/editing_highlight_color</color>
+    <color name="btn_done_background">@color/editing_highlight_color</color>
+    <color name="btn_done_title">@color/white</color>
+    <color name="ucrop_color_active_controls_color">@color/editing_highlight_color</color>
+    <color name="ucrop_color_widget_rotate_mid_line">@color/editing_highlight_color</color>
+    <color name="ucrop_color_active_aspect_ratio">@color/editing_highlight_color</color>
+    <color name="ucrop_color_widget_text">@color/editing_highlight_color</color>
+
+
 
 </resources>

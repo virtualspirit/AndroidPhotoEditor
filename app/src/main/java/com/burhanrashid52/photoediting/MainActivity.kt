@@ -29,8 +29,8 @@ class MainActivity : AppCompatActivity() {
 
 
             intent.putExtra("path", "https://virtualspirit.me/assets/front-end/software-development@2x-93c79cac29e995da260cb38bafb3fc19b8d5307ac7f4c719d62c658a004ba701.png")
-            val tools = arrayOf("line", "circle", "clip", "filter", "imageSticker")
-            intent.putExtra("tools", tools)
+//            val tools = arrayOf("line", "circle", "clip", "filter", "imageSticker")
+//            intent.putExtra("tools", tools)
             startActivity(intent)
         }
     }

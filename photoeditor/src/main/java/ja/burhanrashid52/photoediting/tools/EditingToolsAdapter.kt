@@ -1,11 +1,15 @@
 package ja.burhanrashid52.photoediting.tools
 
 import android.app.Activity
+import android.content.Context
+import android.graphics.PorterDuff.Mode
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.recyclerview.widget.RecyclerView
 import ja.burhanrashid52.photoeditor.R
 import java.util.ArrayList
@@ -18,18 +22,22 @@ import java.util.ArrayList
 class EditingToolsAdapter(private val mOnItemSelected: OnItemSelected) :
     RecyclerView.Adapter<EditingToolsAdapter.ViewHolder>() {
     private val mToolList: MutableList<ToolModel> = ArrayList()
+    private var selectedTool: ToolType? = null
+    private var previousPosition: Int = RecyclerView.NO_POSITION
+    private var currentPosition: Int = RecyclerView.NO_POSITION
+    private lateinit var context: Context
 
     interface OnItemSelected {
         fun onToolSelected(toolType: ToolType)
     }
 
     internal inner class ToolModel(
-        val mToolName: String,
         val mToolIcon: Int,
         val mToolType: ToolType
     )
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        context = parent.context;
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.row_editing_tools, parent, false)
         return ViewHolder(view)
@@ -37,8 +45,12 @@ class EditingToolsAdapter(private val mOnItemSelected: OnItemSelected) :
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = mToolList[position]
-        holder.txtTool.text = item.mToolName
         holder.imgToolIcon.setImageResource(item.mToolIcon)
+        if ((item.mToolType == ToolType.ERASER || item.mToolType == ToolType.SHAPE || item.mToolType == ToolType.FILTER) && (item.mToolType == selectedTool)) {
+            holder.imgToolIcon.imageTintList = AppCompatResources.getColorStateList(context, R.color.tool_highlight_color)
+        } else {
+            holder.imgToolIcon.imageTintList = null
+        }
     }
 
     override fun getItemCount(): Int {
@@ -47,13 +59,20 @@ class EditingToolsAdapter(private val mOnItemSelected: OnItemSelected) :
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val imgToolIcon: ImageView = itemView.findViewById(R.id.imgToolIcon)
-        val txtTool: TextView = itemView.findViewById(R.id.txtTool)
 
         init {
             itemView.setOnClickListener { _: View? ->
+                selectedTool = mToolList[layoutPosition].mToolType
+                previousPosition = currentPosition
+                currentPosition = layoutPosition
+                if (previousPosition != RecyclerView.NO_POSITION) {
+                    notifyItemChanged(previousPosition)
+                }
+                notifyItemChanged(currentPosition)
                 mOnItemSelected.onToolSelected(
                     mToolList[layoutPosition].mToolType
                 )
+
             }
         }
     }
@@ -61,23 +80,14 @@ class EditingToolsAdapter(private val mOnItemSelected: OnItemSelected) :
     fun addTool(tool: String) {
         when (tool) {
             "shape" -> {
-                mToolList.add(ToolModel("Shape", R.drawable.ic_oval, ToolType.SHAPE))
-                mToolList.add(ToolModel("Eraser", R.drawable.ic_eraser, ToolType.ERASER))
+                mToolList.add(ToolModel( R.drawable.ic_shape, ToolType.SHAPE))
+                mToolList.add(ToolModel(R.drawable.ic_eraser, ToolType.ERASER))
             }
-            "clip" -> mToolList.add(ToolModel("Clip", R.drawable.ic_text, ToolType.CLIP))
-            "text" -> mToolList.add(ToolModel("Text", R.drawable.ic_text, ToolType.TEXT))
-            "filter" -> mToolList.add(ToolModel("Filter", R.drawable.ic_photo_filter, ToolType.FILTER))
-            "emoji" -> mToolList.add(ToolModel("Emoji", R.drawable.ic_insert_emoticon, ToolType.EMOJI))
-            "sticker" -> mToolList.add(ToolModel("Sticker", R.drawable.ic_sticker, ToolType.STICKER))
+            "clip" -> mToolList.add(ToolModel(R.drawable.ic_crop, ToolType.CLIP))
+            "text" -> mToolList.add(ToolModel(R.drawable.ic_text, ToolType.TEXT))
+            "filter" -> mToolList.add(ToolModel(R.drawable.ic_photo_filter, ToolType.FILTER))
+            "emoji" -> mToolList.add(ToolModel(R.drawable.ic_insert_emoticon, ToolType.EMOJI))
+            "sticker" -> mToolList.add(ToolModel(R.drawable.ic_sticker, ToolType.STICKER))
         }
-    }
-
-    init {
-//        mToolList.add(ToolModel("Shape", R.drawable.ic_oval, ToolType.SHAPE))
-//        mToolList.add(ToolModel("Text", R.drawable.ic_text, ToolType.TEXT))
-//        mToolList.add(ToolModel("Eraser", R.drawable.ic_eraser, ToolType.ERASER))
-//        mToolList.add(ToolModel("Filter", R.drawable.ic_photo_filter, ToolType.FILTER))
-//        mToolList.add(ToolModel("Emoji", R.drawable.ic_insert_emoticon, ToolType.EMOJI))
-//        mToolList.add(ToolModel("Sticker", R.drawable.ic_sticker, ToolType.STICKER))
     }
 }

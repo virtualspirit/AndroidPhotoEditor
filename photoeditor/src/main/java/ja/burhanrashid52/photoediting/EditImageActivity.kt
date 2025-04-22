@@ -253,8 +253,8 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         val btnDone: Button = findViewById(R.id.btnDone)
         btnDone.setOnClickListener(this)
 
-        val imgClose: ImageView = findViewById(R.id.imgClose)
-        imgClose.setOnClickListener(this)
+        val btnCancel: Button = findViewById(R.id.btnCancel)
+        btnCancel.setOnClickListener(this)
 
         val imgShare: ImageView = findViewById(R.id.imgShare)
         imgShare.setOnClickListener(this)
@@ -359,7 +359,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
             }
 
             R.id.btnDone -> saveImage()
-            R.id.imgClose -> onBackPressed()
+            R.id.btnCancel -> onBackPressed()
             R.id.imgShare -> shareImage()
             R.id.imgCamera -> {
                 val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
@@ -559,6 +559,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
                 mPhotoEditor.setShape(mShapeBuilder)
                 mTxtCurrentTool.setText(R.string.label_shape)
                 showBottomSheetDialogFragment(mShapeBSFragment)
+                showFilter(false)
             }
 
             ToolType.TEXT -> {
@@ -572,47 +573,38 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
                         mTxtCurrentTool.setText(R.string.label_text)
                     }
                 })
+                showFilter(false)
             }
 
             ToolType.ERASER -> {
                 mPhotoEditor.brushEraser()
                 mTxtCurrentTool.setText(R.string.label_eraser_mode)
+                showFilter(false)
             }
 
             ToolType.FILTER -> {
-                if (mIsFilterVisible) {
-                    showFilter(false)
-                    mTxtCurrentTool.setText(R.string.app_name)
-                } else {
-                    mTxtCurrentTool.setText(R.string.label_filter)
-                    showFilter(true)
-                }
+                mTxtCurrentTool.setText(R.string.label_filter)
+                showFilter(true)
             }
 
-            ToolType.EMOJI -> showBottomSheetDialogFragment(mEmojiBSFragment)
-            ToolType.STICKER -> showBottomSheetDialogFragment(mStickerBSFragment)
+            ToolType.EMOJI -> {
+                showBottomSheetDialogFragment(mEmojiBSFragment)
+                showFilter(false)
+            }
+            ToolType.STICKER -> {
+                showBottomSheetDialogFragment(mStickerBSFragment)
+                showFilter(false)
+            }
             ToolType.CLIP -> {
                 sourceUri?.let {
                     UCrop.of(it, it)
                         .withMaxResultSize(2048, 2048)
                         .start(this)
                 };
+                showFilter(false)
             }
         }
     }
-
-//    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-//        super.onActivityResult(requestCode, resultCode, data)
-//
-//        if (resultCode == Activity.RESULT_OK && requestCode == UCrop.REQUEST_CROP) {
-//            val resultUri: Uri? = data?.let { UCrop.getOutput(it) }
-//            // Handle the cropped image URI
-//            mPhotoEditorView.source = resultUri
-//        } else if (resultCode == UCrop.RESULT_ERROR) {
-//            val cropError: Throwable? = data?.let { UCrop.getError(it) }
-//            // Handle the crop error
-//        }
-//    }
 
     private fun showBottomSheetDialogFragment(fragment: BottomSheetDialogFragment?) {
         if (fragment == null || fragment.isAdded) {

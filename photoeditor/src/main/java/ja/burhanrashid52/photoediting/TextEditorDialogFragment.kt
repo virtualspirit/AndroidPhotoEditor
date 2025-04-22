@@ -3,14 +3,17 @@ package ja.burhanrashid52.photoediting
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
+import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import androidx.annotation.ColorInt
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
@@ -25,7 +28,8 @@ import ja.burhanrashid52.photoeditor.R
 class TextEditorDialogFragment : DialogFragment() {
 
     private lateinit var mAddTextEditText: EditText
-    private lateinit var mAddTextDoneTextView: TextView
+    private lateinit var mAddTextDoneBtn: Button
+    private lateinit var mAddTextCancelBtn: Button
     private lateinit var mInputMethodManager: InputMethodManager
     private var mColorCode = 0
     private var mTextEditorListener: TextEditorListener? = null
@@ -54,6 +58,7 @@ class TextEditorDialogFragment : DialogFragment() {
         return inflater.inflate(R.layout.add_text_dialog, container, false)
     }
 
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -62,7 +67,8 @@ class TextEditorDialogFragment : DialogFragment() {
         mAddTextEditText = view.findViewById(R.id.add_text_edit_text)
         mInputMethodManager =
             activity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        mAddTextDoneTextView = view.findViewById(R.id.add_text_done_tv)
+        mAddTextDoneBtn = view.findViewById(R.id.add_text_btnDone)
+        mAddTextCancelBtn = view.findViewById(R.id.add_Text_btnCancel)
 
         //Setup the color picker for text color
         val addTextColorPickerRecyclerView: RecyclerView =
@@ -90,7 +96,7 @@ class TextEditorDialogFragment : DialogFragment() {
         mInputMethodManager.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
 
         //Make a callback on activity when user is done with text editing
-        mAddTextDoneTextView.setOnClickListener { onClickListenerView ->
+        mAddTextDoneBtn.setOnClickListener { onClickListenerView ->
             mInputMethodManager.hideSoftInputFromWindow(onClickListenerView.windowToken, 0)
             dismiss()
             val inputText = mAddTextEditText.text.toString()
@@ -98,6 +104,10 @@ class TextEditorDialogFragment : DialogFragment() {
             if (inputText.isNotEmpty() && textEditorListener != null) {
                 textEditorListener.onDone(inputText, mColorCode)
             }
+        }
+        mAddTextCancelBtn.setOnClickListener{ onClickListenerView ->
+            mInputMethodManager.hideSoftInputFromWindow(onClickListenerView.windowToken, 0)
+            dismiss()
         }
     }
 

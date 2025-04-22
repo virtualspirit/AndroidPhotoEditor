@@ -18,5 +18,6 @@
     <string name="msg_save_image_to_share">Zapisz obraz, aby udostępnić</string>
     <string name="msg_share_image">Udostępnij</string>
     <string name="label_done">Done</string>
+    <string name="label_cancel">Cancel</string>
 
 </resources>
