@@ -417,7 +417,9 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         ) == PackageManager.PERMISSION_GRANTED
         if (hasStoragePermission || FileSaveHelper.isSdkHigherThan28()) {
             showLoading("Saving...")
-            mSaveFileHelper.createFile(fileName, object : FileSaveHelper.OnFileCreateResult {
+            val value = intent.extras
+            val targetPath = value?.getString("targetPath")
+            mSaveFileHelper.createFile(fileName, targetPath, object : FileSaveHelper.OnFileCreateResult {
 
                 @RequiresPermission(allOf = [Manifest.permission.WRITE_EXTERNAL_STORAGE])
                 override fun onFileCreateResult(

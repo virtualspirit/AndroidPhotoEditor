@@ -67,13 +67,15 @@ class FileSaveHelper(private val mContentResolver: ContentResolver) : LifecycleO
      * 2- create File on Disk.
      *
      * @param fileNameToSave fileName
+     * @param targetPath target path to save
      * @param listener       result listener
      */
-    fun createFile(fileNameToSave: String, listener: OnFileCreateResult?) {
+    fun createFile(fileNameToSave: String, targetPath: String?, listener: OnFileCreateResult?) {
         resultListener = listener
         executor!!.submit {
             var cursor: Cursor? = null
             try {
+                var filePath = targetPath
 
                 // Build the edited image URI for the MediaStore
                 val newImageDetails = ContentValues()
@@ -81,17 +83,19 @@ class FileSaveHelper(private val mContentResolver: ContentResolver) : LifecycleO
                 val editedImageUri =
                     getEditedImageUri(fileNameToSave, newImageDetails, imageCollection)
 
-                // Query the MediaStore for the image file path from the image Uri
-                cursor = mContentResolver.query(
-                    editedImageUri,
-                    arrayOf(MediaStore.Images.Media.DATA),
-                    null,
-                    null,
-                    null
-                )
-                val columnIndex = cursor!!.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
-                cursor.moveToFirst()
-                val filePath = cursor.getString(columnIndex)
+                if (filePath == null) {
+                    // Query the MediaStore for the image file path from the image Uri
+                    cursor = mContentResolver.query(
+                        editedImageUri,
+                        arrayOf(MediaStore.Images.Media.DATA),
+                        null,
+                        null,
+                        null
+                    )
+                    val columnIndex = cursor!!.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
+                    cursor.moveToFirst()
+                    filePath = cursor.getString(columnIndex)
+                }
 
                 // Post the file created result with the resolved image file path
                 updateResult(true, filePath, null, editedImageUri, newImageDetails)
