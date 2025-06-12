@@ -36,7 +36,7 @@ internal class Sticker(
         imageView = rootView.findViewById(R.id.imgPhotoEditorImage)
     }
 
-    init {
-        setupGesture()
-    }
+//    init {
+//        setupGesture()
+//    }
 }

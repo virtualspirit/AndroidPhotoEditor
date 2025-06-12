@@ -52,19 +52,6 @@ internal class GraphicManager(
         )
     }
 
-//    fun removeView(graphic: Graphic) {
-//        val view = graphic.rootView
-//        if (mViewState.containsAddedView(view)) {
-//            mPhotoEditorView.removeView(view)
-//            mViewState.removeAddedView(view)
-//            mViewState.pushRedoView(view)
-//            onPhotoEditorListener?.onRemoveViewListener(
-//                graphic.viewType,
-//                mViewState.addedViewsCount
-//            )
-//        }
-//    }
-
     fun removeView(viewToRemove: View): Boolean {
         if (mViewState.containsAddedView(viewToRemove)) {
             mPhotoEditorView.removeView(viewToRemove)
@@ -89,52 +76,10 @@ internal class GraphicManager(
         mViewState.replaceAddedView(view)
     }
 
-//    fun undoView(): Boolean {
-//        if (mViewState.addedViewsCount > 0) {
-//            val removeView = mViewState.getAddedView(
-//                mViewState.addedViewsCount - 1
-//            )
-//            if (removeView is DrawingView) {
-//                return removeView.undo() || (mViewState.addedViewsCount != 0)
-//            } else {
-//                mViewState.removeAddedView(mViewState.addedViewsCount - 1)
-//                mPhotoEditorView.removeView(removeView)
-//                mViewState.pushRedoView(removeView)
-//            }
-//            when (val viewTag = removeView.tag) {
-//                is ViewType -> onPhotoEditorListener?.onRemoveViewListener(
-//                    viewTag,
-//                    mViewState.addedViewsCount
-//                )
-//            }
-//        }
-//        return mViewState.addedViewsCount != 0
-//    }
-//
-//    fun redoView(): Boolean {
-//        if (redoStackCount > 0) {
-//            val redoView = mViewState.getRedoView(redoStackCount - 1)
-//
-//            if (redoView is DrawingView) {
-//                val result = redoView.redo()
-//                return result || redoStackCount > 0
-//            } else {
-//                mViewState.popRedoView()
-//                mPhotoEditorView.addView(redoView)
-//                mViewState.addAddedView(redoView)
-//            }
-//
-//            val viewTag = redoView.tag
-//            if (viewTag is ViewType) {
-//                onPhotoEditorListener?.onAddViewListener(viewTag, mViewState.addedViewsCount)
-//            }
-//        }
-//
-//        return redoStackCount > 0
-//    }
-
     fun undo(): Boolean {
         if (mViewState.undoActionsCount == 0) return false
+
+        BoxHelper(mPhotoEditorView, mViewState).clearHelperBox()
 
         val lastAction = mViewState.popUndoAction()
 
@@ -143,7 +88,6 @@ internal class GraphicManager(
                 val view = lastAction.view
                 mPhotoEditorView.removeView(view)
                 mViewState.removeAddedView(view)
-
                 (view.tag as? ViewType)?.let {
                     onPhotoEditorListener?.onRemoveViewListener(it, mViewState.addedViewsCount)
                 }
@@ -152,10 +96,15 @@ internal class GraphicManager(
                 val view = lastAction.view
                 mPhotoEditorView.addView(view)
                 mViewState.addAddedView(view)
+                mViewState.currentSelectedView = view // Tetap set currentSelectedView
 
+                // Panggil listener data, BUKAN listener UI
                 (view.tag as? ViewType)?.let {
                     onPhotoEditorListener?.onAddViewListener(it, mViewState.addedViewsCount)
                 }
+            }
+            ActionType.TRANSFORM -> {
+                lastAction.oldTransform?.applyTo(lastAction.view)
             }
         }
 
@@ -166,6 +115,8 @@ internal class GraphicManager(
     fun redo(): Boolean {
         if (mViewState.redoActionsCount == 0) return false
 
+        BoxHelper(mPhotoEditorView, mViewState).clearHelperBox()
+
         val lastRedoAction = mViewState.popRedoAction()
 
         when (lastRedoAction.actionType) {
@@ -173,11 +124,26 @@ internal class GraphicManager(
                 val view = lastRedoAction.view
                 mPhotoEditorView.addView(view)
                 mViewState.addAddedView(view)
+
+                mViewState.currentSelectedView = view
+                (view.tag as? ViewType)?.let {
+                    onPhotoEditorListener?.onAddViewListener(it, mViewState.addedViewsCount)
+                }
             }
             ActionType.DELETE -> {
                 val view = lastRedoAction.view
                 mPhotoEditorView.removeView(view)
                 mViewState.removeAddedView(view)
+
+                mViewState.currentSelectedView = null
+
+                (view.tag as? ViewType)?.let {
+                    onPhotoEditorListener?.onRemoveViewListener(it, mViewState.addedViewsCount)
+                }
+            }
+            ActionType.TRANSFORM -> {
+                // Untuk me-redo TRANSFORM, terapkan state BARU
+                lastRedoAction.newTransform?.applyTo(lastRedoAction.view)
             }
         }
 
@@ -185,16 +151,11 @@ internal class GraphicManager(
         return mViewState.redoActionsCount > 0
     }
 
-//    fun removeViewBy(viewToRemove: View): Boolean {
-//        if (mViewState.containsAddedView(viewToRemove)) {
-//            mPhotoEditorView.removeView(viewToRemove)
-//            mViewState.removeAddedView(viewToRemove)
-//            mViewState.pushRedoView(viewToRemove)
-//            (viewToRemove.tag as? ViewType)?.let {
-//                onPhotoEditorListener?.onRemoveViewListener(it, mViewState.addedViewsCount)
-//            }
-//            return true
-//        }
-//        return false
-//    }
+    fun pushTransformAction(view: View, oldTransform: ViewTransform, newTransform: ViewTransform) {
+        val action = EditorAction(view, ActionType.TRANSFORM, oldTransform, newTransform)
+        mViewState.pushUndoAction(action)
+        if (mViewState.redoActionsCount > 0) {
+            mViewState.clearRedoActions()
+        }
+    }
 }

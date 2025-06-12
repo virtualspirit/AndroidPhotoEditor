@@ -360,4 +360,6 @@ interface PhotoEditor {
     fun setShape(shapeBuilder: ShapeBuilder) // endregion
 
     fun deleteSelectedView(): Boolean
+    fun isAnyViewSelected(): Boolean
+    fun onStopViewChangeListener(viewType: ViewType)
 }

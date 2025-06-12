@@ -52,7 +52,7 @@
         android:layout_height="wrap_content"
         android:background="@color/semi_black_transparent"
         android:padding="8dp"
-        android:src="@drawable/zl_remove"
+        android:src="@drawable/delete"
 
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/imgUndo" />

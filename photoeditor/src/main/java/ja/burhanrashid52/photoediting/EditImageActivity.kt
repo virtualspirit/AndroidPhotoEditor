@@ -206,6 +206,17 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         mSaveFileHelper = FileSaveHelper(this)
     }
 
+    fun updateActionButtonsState() {
+        mImgUndo.isEnabled = mPhotoEditor.isUndoAvailable
+        mImgRedo.isEnabled = mPhotoEditor.isRedoAvailable
+
+        if (mPhotoEditor.isAnyViewSelected()) {
+            mImgDelete.isEnabled = true
+        } else {
+            mImgDelete.isEnabled = false
+        }
+    }
+
     private fun handleIntentImage(source: ImageView) {
         if (intent == null) {
             return
@@ -331,8 +342,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
             "onAddViewListener() called with: viewType = [$viewType], numberOfAddedViews = [$numberOfAddedViews]"
         )
 
-        mImgUndo.isEnabled = mPhotoEditor.isUndoAvailable
-        mImgRedo.isEnabled = mPhotoEditor.isRedoAvailable
+        updateActionButtonsState()
     }
 
     override fun onRemoveViewListener(viewType: ViewType, numberOfAddedViews: Int) {
@@ -341,8 +351,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
             "onRemoveViewListener() called with: viewType = [$viewType], numberOfAddedViews = [$numberOfAddedViews]"
         )
 
-        mImgUndo.isEnabled = mPhotoEditor.isUndoAvailable
-        mImgRedo.isEnabled = mPhotoEditor.isRedoAvailable
+        updateActionButtonsState()
     }
 
     override fun onStartViewChangeListener(viewType: ViewType) {
@@ -367,17 +376,18 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     override fun onClick(view: View) {
         when (view.id) {
             R.id.imgUndo -> {
-                mImgUndo.isEnabled = mPhotoEditor.undo()
-                mImgRedo.isEnabled = mPhotoEditor.isRedoAvailable
+                mPhotoEditor.undo()
+                updateActionButtonsState()
             }
 
             R.id.imgRedo -> {
-                mImgUndo.isEnabled = mPhotoEditor.isUndoAvailable
-                mImgRedo.isEnabled = mPhotoEditor.redo()
+                mPhotoEditor.redo()
+                updateActionButtonsState()
             }
 
             R.id.imgRemove -> {
                 mPhotoEditor.deleteSelectedView()
+                updateActionButtonsState()
             }
 
             R.id.btnDone -> saveImage()

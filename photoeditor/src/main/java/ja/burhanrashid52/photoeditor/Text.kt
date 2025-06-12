@@ -54,7 +54,7 @@ internal class Text(
         photoEditorListener?.onEditTextChangeListener(view, textInput, currentTextColor)
     }
 
-    init {
-        setupGesture()
-    }
+//    init {
+//        setupGesture()
+//    }
 }

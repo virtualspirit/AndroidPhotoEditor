@@ -21,11 +21,6 @@ internal class Shape(
 ) {
     private var shapeView: ShapeView? = null
 
-    // MODIFIKASI: Ubah signature method ini
-//    fun buildView(shapeBuilder: ShapeBuilder, path: android.graphics.Path, bounds: android.graphics.RectF) {
-//        shapeView?.setShape(shapeBuilder, path, bounds)
-//    }
-
     fun buildView(shapeBuilder: ShapeBuilder, path: android.graphics.Path) {
         shapeView?.setShape(shapeBuilder, path)
     }
@@ -41,7 +36,7 @@ internal class Shape(
         shapeView = rootView.findViewById(R.id.shape_view)
     }
 
-    init {
-        setupGesture()
-    }
+//    init {
+//        setupGesture()
+//    }
 }

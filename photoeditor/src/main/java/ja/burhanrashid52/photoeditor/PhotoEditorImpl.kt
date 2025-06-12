@@ -38,7 +38,7 @@ import kotlinx.coroutines.withContext
  */
 internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") constructor(
     builder: PhotoEditor.Builder
-) : PhotoEditor, BrushViewChangeListener {
+) : PhotoEditor, BrushViewChangeListener, MultiTouchListener.OnTransformAction {
     private val photoEditorView: PhotoEditorView = builder.photoEditorView
     private val viewState: PhotoEditorViewState = PhotoEditorViewState()
     private val imageView: ImageView = builder.imageView
@@ -53,6 +53,7 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
     private val mDefaultEmojiTypeface: Typeface? = builder.emojiTypeface
     private val mGraphicManager: GraphicManager = GraphicManager(builder.photoEditorView, viewState)
     private val context: Context = builder.context
+    private val mMultiTouchListener: MultiTouchListener
 
     override fun addImage(desiredImage: Bitmap) {
         val multiTouchListener = getMultiTouchListener(true)
@@ -132,22 +133,12 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
     }
 
     private fun addToEditor(graphic: Graphic) {
-//        clearHelperBox()
-//        mGraphicManager.addView(graphic)
-//        // Change the in-focus view
-//        viewState.currentSelectedView = graphic.rootView
-
-        // Hapus border dari view yang mungkin sedang fokus
         clearHelperBox()
+        graphic.rootView.setOnTouchListener(mMultiTouchListener)
 
         mGraphicManager.addView(graphic)
-
-        // Jadikan graphic yang baru ditambahkan sebagai view yang sedang terpilih
         viewState.currentSelectedView = graphic.rootView
-
-        // Secara manual panggil method untuk menampilkan border/handle-nya
-        // Kita bisa mengekstrak logika ini dari MultiTouchListener atau Graphic
-        graphic.toggleSelection() // Kita perlu membuat method ini public/internal di Graphic.kt
+        graphic.toggleSelection()
     }
 
     /**
@@ -157,14 +148,20 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
      * @return scalable multitouch listener
      */
     private fun getMultiTouchListener(isPinchScalable: Boolean): MultiTouchListener {
-        return MultiTouchListener(
-            deleteView,
-            photoEditorView,
-            imageView,
-            isPinchScalable,
-            mOnPhotoEditorListener,
-            viewState
-        )
+        return mMultiTouchListener
+    }
+
+    override fun onStopViewChangeListener(viewType: ViewType) {
+        val stoppedView = viewState.currentSelectedView
+        if (stoppedView != null) {
+            val initialTransform = mMultiTouchListener.getInitialTransform()
+            val finalTransform = ViewTransform.from(stoppedView)
+
+            if (initialTransform != null && initialTransform != finalTransform) {
+                mGraphicManager.pushTransformAction(stoppedView, initialTransform, finalTransform)
+            }
+        }
+        mOnPhotoEditorListener?.onStopViewChangeListener(viewType)
     }
 
     override fun setBrushDrawingMode(brushDrawingMode: Boolean) {
@@ -256,12 +253,6 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
         saveAsBitmap(SaveSettings.Builder().build(), onSaveBitmap)
     }
 
-    override fun setOnPhotoEditorListener(onPhotoEditorListener: OnPhotoEditorListener) {
-        mOnPhotoEditorListener = onPhotoEditorListener
-        mGraphicManager.onPhotoEditorListener = mOnPhotoEditorListener
-        mBrushDrawingStateListener.setOnPhotoEditorListener(mOnPhotoEditorListener)
-    }
-
     override val isCacheEmpty: Boolean
         get() = !isUndoAvailable && !isRedoAvailable
 
@@ -349,19 +340,6 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
         setBrushDrawingMode(false)
     }
 
-//    override fun deleteSelectedView(): Boolean {
-//        val currentView = viewState.currentSelectedView
-//        if (currentView != null) {
-//            if (mGraphicManager.removeViewBy(currentView)) {
-//                viewState.clearCurrentSelectedView()
-//                // Setelah menghapus, sembunyikan tombol hapus
-//                (context as? EditImageActivity)?.hideDeleteButton()
-//                return true
-//            }
-//        }
-//        return false
-//    }
-
     override fun deleteSelectedView(): Boolean {
         val currentView = viewState.currentSelectedView
         if (currentView != null) {
@@ -375,7 +353,18 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
     }
 
     override fun undo(): Boolean {
-        return mGraphicManager.undo()
+        clearHelperBox()
+
+        val undoneView = mGraphicManager.undo() // Panggil versi baru
+
+        if (undoneView != null) {
+            // Periksa aksi apa yang baru saja di-undo.
+            // Kita perlu tahu ini. Mari kita modifikasi GraphicManager lagi.
+            // ... Ini menjadi rumit.
+
+            // MARI KITA KEMBALI KE PENDEKATAN YANG LEBIH SEDERHANA DAN EFEKTIF.
+        }
+        return viewState.undoActionsCount > 0
     }
 
     override fun redo(): Boolean {
@@ -385,19 +374,34 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
     override val isUndoAvailable get() = viewState.undoActionsCount > 0
     override val isRedoAvailable get() =  viewState.redoActionsCount > 0
 
-//    override fun undo(): Boolean {
-//        return mGraphicManager.undoView()
-//    }
-//
-//    override val isUndoAvailable get() = viewState.addedViewsCount > 0
-//
-//    override fun redo(): Boolean {
-//        return mGraphicManager.redoView()
-//    }
-//
-//    override val isRedoAvailable get() = mGraphicManager.redoStackCount > 0
+    override fun isAnyViewSelected(): Boolean {
+        return viewState.currentSelectedView != null
+    }
+
+    override fun onTransform(view: View, oldTransform: ViewTransform, newTransform: ViewTransform) {
+        mGraphicManager.pushTransformAction(view, oldTransform, newTransform)
+        (context as? EditImageActivity)?.updateActionButtonsState()
+    }
+
+    override fun setOnPhotoEditorListener(onPhotoEditorListener: OnPhotoEditorListener) {
+        mOnPhotoEditorListener = onPhotoEditorListener
+        mGraphicManager.onPhotoEditorListener = mOnPhotoEditorListener
+
+        mMultiTouchListener.mOnPhotoEditorListener = onPhotoEditorListener
+    }
 
     init {
+        drawingView.setBrushViewChangeListener(this)
+
+        mMultiTouchListener = MultiTouchListener(
+            deleteView,
+            photoEditorView,
+            imageView,
+            builder.isTextPinchScalable,
+            viewState,
+            this // 'this' untuk OnTransformAction
+        )
+
         viewState.deleteView = deleteView
         drawingView.setBrushViewChangeListener(this)
         val mDetector = GestureDetector(

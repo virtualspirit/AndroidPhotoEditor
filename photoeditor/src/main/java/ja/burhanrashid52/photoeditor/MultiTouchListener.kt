@@ -1,5 +1,6 @@
 package ja.burhanrashid52.photoeditor
 
+import android.annotation.SuppressLint
 import android.graphics.Rect
 import android.view.GestureDetector
 import android.view.GestureDetector.SimpleOnGestureListener
@@ -19,13 +20,13 @@ import kotlin.math.min
  *
  */
 internal class MultiTouchListener(
-//    deleteView: View?,
     private val mDeleteView: View?,
     photoEditorView: PhotoEditorView,
     photoEditImageView: ImageView?,
     private val mIsPinchScalable: Boolean,
-    onPhotoEditorListener: OnPhotoEditorListener?,
-    viewState: PhotoEditorViewState
+//    onPhotoEditorListener: OnPhotoEditorListener?,
+    viewState: PhotoEditorViewState,
+    private val mOnTransformAction: OnTransformAction
 ) : OnTouchListener {
     private val mGestureListener: GestureDetector
     private val isRotateEnabled = true
@@ -45,9 +46,11 @@ internal class MultiTouchListener(
     private val photoEditImageView: ImageView?
     private val photoEditorView: PhotoEditorView
     private var mOnGestureControl: OnGestureControl? = null
-    private val mOnPhotoEditorListener: OnPhotoEditorListener?
+    internal var mOnPhotoEditorListener: OnPhotoEditorListener? = null
     private val viewState: PhotoEditorViewState
+    private var initialTransform: ViewTransform? = null
 
+    @SuppressLint("ClickableViewAccessibility")
     override fun onTouch(view: View, event: MotionEvent): Boolean {
         mScaleGestureDetector.onTouchEvent(view, event)
         mGestureListener.onTouchEvent(event)
@@ -81,6 +84,9 @@ internal class MultiTouchListener(
                     mDeleteView.isEnabled = true
                 }
                 view.bringToFront()
+
+                initialTransform = ViewTransform.from(view)
+
                 firePhotoEditorSDKListener(view, true)
             }
             MotionEvent.ACTION_MOVE ->
@@ -98,13 +104,19 @@ internal class MultiTouchListener(
             MotionEvent.ACTION_CANCEL -> mActivePointerId = INVALID_POINTER_ID
             MotionEvent.ACTION_UP -> {
                 mActivePointerId = INVALID_POINTER_ID
-               if (!isViewInBounds(photoEditImageView, x, y)) {
+                if (!isViewInBounds(photoEditImageView, x, y)) {
                     view.animate().translationY(0f).translationY(0f)
                 }
                 if (mDeleteView != null) {
-                    mDeleteView.visibility = View.GONE
+                    mDeleteView.isEnabled = false
                 }
+                val finalTransform = ViewTransform.from(view)
+                if (initialTransform != null && initialTransform != finalTransform) {
+                    mOnTransformAction.onTransform(view, initialTransform!!, finalTransform)
+                }
+
                 firePhotoEditorSDKListener(view, false)
+                initialTransform = null
             }
             MotionEvent.ACTION_POINTER_UP -> {
                 val pointerIndexPointerUp =
@@ -121,12 +133,15 @@ internal class MultiTouchListener(
         return true
     }
 
+    fun getInitialTransform(): ViewTransform? {
+        return initialTransform
+    }
+
     private fun firePhotoEditorSDKListener(view: View, isStart: Boolean) {
         val viewTag = view.tag
         if (mOnPhotoEditorListener != null && viewTag != null && viewTag is ViewType) {
-            if (isStart) mOnPhotoEditorListener.onStartViewChangeListener(view.tag as ViewType) else mOnPhotoEditorListener.onStopViewChangeListener(
-                view.tag as ViewType
-            )
+            if (isStart) mOnPhotoEditorListener!!.onStartViewChangeListener(viewTag as ViewType)
+            else mOnPhotoEditorListener!!.onStopViewChangeListener(viewTag as ViewType)
         }
     }
 
@@ -257,7 +272,7 @@ internal class MultiTouchListener(
         this.deleteView = mDeleteView
         this.photoEditorView = photoEditorView
         this.photoEditImageView = photoEditImageView
-        mOnPhotoEditorListener = onPhotoEditorListener
+//        mOnPhotoEditorListener = onPhotoEditorListener
         outRect = if (deleteView != null) {
             Rect(
                 deleteView.left, deleteView.top,
@@ -267,5 +282,9 @@ internal class MultiTouchListener(
             Rect(0, 0, 0, 0)
         }
         this.viewState = viewState
+    }
+
+    internal interface OnTransformAction {
+        fun onTransform(view: View, oldTransform: ViewTransform, newTransform: ViewTransform)
     }
 }
