@@ -85,6 +85,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     private lateinit var mImgUndo: View
     private lateinit var mImgRedo: View
     private lateinit var mImgDelete: View
+    private lateinit var mImgDuplicate: View
     private val mEditingToolsAdapter = EditingToolsAdapter(this)
     private val mFilterViewAdapter = FilterViewAdapter(this)
     private lateinit var mRootView: ConstraintLayout
@@ -210,11 +211,8 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         mImgUndo.isEnabled = mPhotoEditor.isUndoAvailable
         mImgRedo.isEnabled = mPhotoEditor.isRedoAvailable
 
-        if (mPhotoEditor.isAnyViewSelected()) {
-            mImgDelete.isEnabled = true
-        } else {
-            mImgDelete.isEnabled = false
-        }
+        mImgDelete.isEnabled =  mPhotoEditor.isAnyViewSelected()
+        mImgDuplicate.isEnabled =  mPhotoEditor.isAnyViewSelected()
     }
 
     private fun handleIntentImage(source: ImageView) {
@@ -263,6 +261,10 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         mImgDelete = findViewById(R.id.imgRemove)
         mImgDelete.setOnClickListener(this)
         mImgDelete.isEnabled = false
+
+        mImgDuplicate = findViewById(R.id.imgDuplicate)
+        mImgDuplicate.setOnClickListener(this)
+        mImgDuplicate.isEnabled = false
 
         val imgCamera: ImageView = findViewById(R.id.imgCamera)
         imgCamera.setOnClickListener(this)
@@ -387,6 +389,11 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
 
             R.id.imgRemove -> {
                 mPhotoEditor.deleteSelectedView()
+                updateActionButtonsState()
+            }
+
+            R.id.imgDuplicate -> {
+                mPhotoEditor.duplicateSelectedView()
                 updateActionButtonsState()
             }
 

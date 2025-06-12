@@ -6,7 +6,9 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Path
+import android.graphics.RectF
 import android.graphics.Typeface
+import android.graphics.drawable.BitmapDrawable
 import android.text.TextUtils
 import android.util.Log
 import android.view.GestureDetector
@@ -44,8 +46,8 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
     private val imageView: ImageView = builder.imageView
     private val deleteView: View? = builder.deleteView
     private val drawingView: DrawingView = builder.drawingView
-    private val mBrushDrawingStateListener: BrushDrawingStateListener =
-        BrushDrawingStateListener(builder.photoEditorView, viewState)
+//    private val mBrushDrawingStateListener: BrushDrawingStateListener =
+//        BrushDrawingStateListener(builder.photoEditorView, viewState)
     private val mBoxHelper: BoxHelper = BoxHelper(builder.photoEditorView, viewState)
     private var mOnPhotoEditorListener: OnPhotoEditorListener? = null
     private val isTextPinchScalable: Boolean = builder.isTextPinchScalable
@@ -54,12 +56,15 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
     private val mGraphicManager: GraphicManager = GraphicManager(builder.photoEditorView, viewState)
     private val context: Context = builder.context
     private val mMultiTouchListener: MultiTouchListener
+    private val viewToGraphicMap = mutableMapOf<View, Graphic>()
 
-    override fun addImage(desiredImage: Bitmap) {
+    override fun addImage(desiredImage: Bitmap): Sticker  {
         val multiTouchListener = getMultiTouchListener(true)
         val sticker = Sticker(photoEditorView, multiTouchListener, viewState, mGraphicManager)
         sticker.buildView(desiredImage)
         addToEditor(sticker)
+
+        return sticker
     }
 
     override fun addText(text: String, colorCodeTextView: Int) {
@@ -75,18 +80,18 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
         addText(text, styleBuilder)
     }
 
-    override fun addText(text: String, styleBuilder: TextStyleBuilder?) {
+    override fun addText(text: String, styleBuilder: TextStyleBuilder?): Text {
         drawingView.enableDrawing(false)
-        val multiTouchListener = getMultiTouchListener(isTextPinchScalable)
         val textGraphic = Text(
             photoEditorView,
-            multiTouchListener,
+            mMultiTouchListener,
             viewState,
             mDefaultTextTypeface,
             mGraphicManager
         )
         textGraphic.buildView(text, styleBuilder)
         addToEditor(textGraphic)
+        return textGraphic
     }
 
     override fun editText(view: View, inputText: String, colorCode: Int) {
@@ -132,13 +137,38 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
         addToEditor(emoji)
     }
 
-    private fun addToEditor(graphic: Graphic) {
-        clearHelperBox()
+    private fun addToEditor(graphic: Graphic, clearFocus: Boolean = true) {
+        if (clearFocus) {
+            clearHelperBox()
+        }
         graphic.rootView.setOnTouchListener(mMultiTouchListener)
 
         mGraphicManager.addView(graphic)
+
+        viewToGraphicMap[graphic.rootView] = graphic
+
         viewState.currentSelectedView = graphic.rootView
         graphic.toggleSelection()
+    }
+
+    private fun addShape(shapeBuilder: ShapeBuilder, path: Path): Shape {
+        val shapeGraphic = Shape(photoEditorView,mMultiTouchListener,  viewState, mGraphicManager)
+        shapeGraphic.buildView(shapeBuilder, path)
+
+        val bounds = RectF()
+        path.computeBounds(bounds, true)
+
+        val halfStrokeWidth = shapeBuilder.shapeSize / 2f
+        val newWidth = Math.ceil((bounds.width() + shapeBuilder.shapeSize).toDouble()).toInt() + 2
+        val newHeight = Math.ceil((bounds.height() + shapeBuilder.shapeSize).toDouble()).toInt() + 2
+
+        val params = RelativeLayout.LayoutParams(newWidth, newHeight)
+        params.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
+        shapeGraphic.rootView.layoutParams = params
+
+        addToEditor(shapeGraphic)
+
+        return shapeGraphic
     }
 
     /**
@@ -163,6 +193,91 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
         }
         mOnPhotoEditorListener?.onStopViewChangeListener(viewType)
     }
+
+    override fun duplicateSelectedView(): Boolean {
+        val originalView = viewState.currentSelectedView ?: return false
+        val tagData = originalView.tag as? Pair<*, *>
+        val originalGraphic = tagData?.second as? Graphic
+
+        // Log untuk memeriksa apa itu originalGraphic
+        Log.d("DUPLICATE_DEBUG", "Attempting to duplicate a graphic of type: ${originalGraphic?.javaClass?.simpleName}")
+
+        if (originalGraphic == null) {
+            Log.e("DUPLICATE_DEBUG", "Could not get original graphic from tag.")
+            return false
+        }
+
+        val originalTransform = ViewTransform.from(originalView)
+
+        // Panggil metode add... dan TANGKAP HASILNYA secara langsung
+        val newGraphic: Graphic? = when (originalGraphic) {
+            is Text -> {
+                val originalTextView = originalView.findViewById<TextView>(R.id.tvPhotoEditorText)
+                val text = originalTextView.text.toString()
+                val styleBuilder = TextStyleBuilder().apply {
+                    withTextColor(originalTextView.currentTextColor)
+
+                    // =======================================================
+                    // PERBAIKAN DI SINI
+                    // =======================================================
+                    // Hanya panggil withTextFont jika typeface-nya tidak null
+                    originalTextView.typeface?.let {
+                        withTextFont(it)
+                    }
+                    // =======================================================
+                }
+                addText(text, styleBuilder)
+            }
+            is Sticker -> {
+                (originalView.findViewById<ImageView>(R.id.imgPhotoEditorImage).drawable as? BitmapDrawable)?.bitmap?.let { addImage(it) }
+            }
+            is Shape -> {
+                Log.d("DUPLICATE_DEBUG", "Graphic is a Shape. Checking recipe...")
+                val recipe = originalGraphic.getRecipe()
+                if (recipe == null) {
+                    Log.e("DUPLICATE_DEBUG", "RECIPE IS NULL! Cannot duplicate shape.")
+                    null // Ini akan membuat newGraphic menjadi null
+                }
+
+                originalGraphic.getRecipe()?.let { recipe ->
+                    addShape(recipe.shapeBuilder, recipe.path)
+                }
+            }
+            else -> {
+                Log.e("DUPLICATE_DEBUG", "Unhandled graphic type.")
+                null
+            }
+        }
+
+        // Jika pembuatan graphic baru gagal, hentikan proses
+        if (newGraphic == null) {
+            Log.e("DUPLICATE_ERROR", "New graphic creation returned null.")
+            return false
+        }
+
+        // Dapatkan view dari graphic yang baru dibuat
+        val newView = newGraphic.rootView
+
+        // Pastikan kita tidak memanipulasi view yang sama
+        if (newView == originalView) {
+            Log.e("DUPLICATE_ERROR", "New view is the same as the original view. Aborting.")
+            return false
+        }
+
+        // Terapkan transformasi dari objek LAMA ke objek BARU, lalu geser.
+        originalTransform.applyTo(newView)
+
+        val offset = 30f
+        newView.translationX += offset
+        newView.translationY += offset
+
+        // Buat aksi undo/redo untuk transformasi objek BARU.
+        val finalTransform = ViewTransform.from(newView)
+        onTransform(newView, originalTransform, finalTransform)
+
+        return true
+    }
+
 
     override fun setBrushDrawingMode(brushDrawingMode: Boolean) {
         Log.d("DrawingView", "Entering Shape Creating Mode...")
@@ -344,6 +459,7 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
         val currentView = viewState.currentSelectedView
         if (currentView != null) {
             if (mGraphicManager.removeView(currentView)) {
+                viewToGraphicMap.remove(currentView)
                 viewState.clearCurrentSelectedView()
                 (context as? EditImageActivity)?.hideDeleteButton()
                 return true

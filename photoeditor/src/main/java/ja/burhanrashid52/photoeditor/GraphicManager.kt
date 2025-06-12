@@ -9,7 +9,7 @@ import android.widget.RelativeLayout
  *
  * @author <https:></https:>//github.com/burhanrashid52>
  */
-internal class GraphicManager(
+class GraphicManager(
     private val mPhotoEditorView: PhotoEditorView,
     private val mViewState: PhotoEditorViewState
 ) {

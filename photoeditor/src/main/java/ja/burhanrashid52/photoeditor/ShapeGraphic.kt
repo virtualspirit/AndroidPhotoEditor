@@ -1,5 +1,6 @@
 package ja.burhanrashid52.photoeditor
 
+import android.graphics.Path
 import android.view.View
 import ja.burhanrashid52.photoeditor.shape.ShapeBuilder
 import ja.burhanrashid52.photoeditor.shape.ShapeView
@@ -8,6 +9,9 @@ import ja.burhanrashid52.photoeditor.shape.ShapeView
  * Created for encapsulating Shape as a Graphic.
  * This class wraps a ShapeView and applies transformations via MultiTouchListener.
  */
+
+data class ShapeRecipe(val shapeBuilder: ShapeBuilder, val path: Path)
+
 internal class Shape(
     private val mPhotoEditorView: PhotoEditorView,
     private val mMultiTouchListener: MultiTouchListener,
@@ -20,11 +24,16 @@ internal class Shape(
     layoutId = R.layout.view_photo_editor_shape
 ) {
     private var shapeView: ShapeView? = null
+    private var recipe: ShapeRecipe? = null
 
-    fun buildView(shapeBuilder: ShapeBuilder, path: android.graphics.Path) {
+    fun buildView(shapeBuilder: ShapeBuilder, path: Path) {
+        this.recipe = ShapeRecipe(shapeBuilder, path)
         shapeView?.setShape(shapeBuilder, path)
     }
 
+    fun getRecipe(): ShapeRecipe? {
+        return recipe
+    }
 
     private fun setupGesture() {
         val onGestureControl = buildGestureController(mPhotoEditorView, mViewState)

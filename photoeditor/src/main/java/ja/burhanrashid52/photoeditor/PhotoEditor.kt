@@ -24,7 +24,7 @@ interface PhotoEditor {
      *
      * @param desiredImage bitmap image you want to add
      */
-    fun addImage(desiredImage: Bitmap)
+    fun addImage(desiredImage: Bitmap): Sticker
 
     /**
      * This add the text on the [PhotoEditorView] with provided parameters
@@ -55,7 +55,7 @@ interface PhotoEditor {
      * @param styleBuilder text style builder with your style
      */
     @SuppressLint("ClickableViewAccessibility")
-    fun addText(text: String, styleBuilder: TextStyleBuilder?)
+    fun addText(text: String, styleBuilder: TextStyleBuilder?): Text
 
     /**
      * This will update text and color on provided view
@@ -362,4 +362,6 @@ interface PhotoEditor {
     fun deleteSelectedView(): Boolean
     fun isAnyViewSelected(): Boolean
     fun onStopViewChangeListener(viewType: ViewType)
+    fun duplicateSelectedView(): Boolean
+
 }

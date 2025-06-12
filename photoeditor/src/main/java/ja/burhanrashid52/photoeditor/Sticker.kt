@@ -9,7 +9,7 @@ import android.widget.ImageView
  *
  * @author <https:></https:>//github.com/burhanrashid52>
  */
-internal class Sticker(
+class Sticker(
     private val mPhotoEditorView: PhotoEditorView,
     private val mMultiTouchListener: MultiTouchListener,
     private val mViewState: PhotoEditorViewState,

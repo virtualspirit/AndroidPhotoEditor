@@ -19,7 +19,7 @@ import kotlin.math.min
  *
  *
  */
-internal class MultiTouchListener(
+class MultiTouchListener(
     private val mDeleteView: View?,
     photoEditorView: PhotoEditorView,
     photoEditImageView: ImageView?,
@@ -138,10 +138,12 @@ internal class MultiTouchListener(
     }
 
     private fun firePhotoEditorSDKListener(view: View, isStart: Boolean) {
-        val viewTag = view.tag
-        if (mOnPhotoEditorListener != null && viewTag != null && viewTag is ViewType) {
-            if (isStart) mOnPhotoEditorListener!!.onStartViewChangeListener(viewTag as ViewType)
-            else mOnPhotoEditorListener!!.onStopViewChangeListener(viewTag as ViewType)
+        val tagData = view.tag as? Pair<*, *>
+        val viewType = tagData?.first as? ViewType
+
+        if (mOnPhotoEditorListener != null && viewType != null) {
+            if (isStart) mOnPhotoEditorListener!!.onStartViewChangeListener(viewType)
+            else mOnPhotoEditorListener!!.onStopViewChangeListener(viewType)
         }
     }
 
@@ -195,7 +197,7 @@ internal class MultiTouchListener(
         var maximumScale = 0f
     }
 
-    internal interface OnGestureControl {
+    interface OnGestureControl {
         fun onClick()
         fun onLongClick()
     }
@@ -284,7 +286,7 @@ internal class MultiTouchListener(
         this.viewState = viewState
     }
 
-    internal interface OnTransformAction {
+    interface OnTransformAction {
         fun onTransform(view: View, oldTransform: ViewTransform, newTransform: ViewTransform)
     }
 }

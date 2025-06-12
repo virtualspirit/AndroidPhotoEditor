@@ -29,6 +29,7 @@
         android:layout_height="15dp"
         android:layout_gravity="top|start"
         android:elevation="1dp"
+        android:visibility="gone"
         android:src="@drawable/ic_remove" />
 
 </FrameLayout>

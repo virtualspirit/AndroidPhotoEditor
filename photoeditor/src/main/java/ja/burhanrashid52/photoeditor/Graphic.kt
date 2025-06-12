@@ -11,7 +11,7 @@ import ja.burhanrashid52.photoeditor.MultiTouchListener.OnGestureControl
  *
  * @author <https:></https:>//github.com/burhanrashid52>
  */
-internal abstract class Graphic(
+abstract class Graphic(
     val context: Context,
     val layoutId: Int,
     val viewType: ViewType,
@@ -36,23 +36,20 @@ internal abstract class Graphic(
     private fun setupRemoveView(rootView: View) {
         //We are setting tag as ViewType to identify what type of the view it is
         //when we remove the view from stack i.e onRemoveViewListener(ViewType viewType, int numberOfAddedViews);
-        rootView.tag = viewType
-        val imgClose = rootView.findViewById<ImageView>(R.id.imgPhotoEditorClose)
-        imgClose?.setOnClickListener {
-//            graphicManager?.removeView(this@Graphic)
-        }
+//        rootView.tag = viewType
+//        rootView.tag = Pair(viewType, this)
+//        val imgClose = rootView.findViewById<ImageView>(R.id.imgPhotoEditorClose)
+//        imgClose?.setOnClickListener {
+////            graphicManager?.removeView(this@Graphic)
+//        }
+
+//        rootView.tag = viewType
+        rootView.tag = Pair(viewType, this)
     }
 
     internal fun toggleSelection() {
         val frmBorder = rootView.findViewById<View>(R.id.frmBorder)
-//        val imgClose = rootView.findViewById<View>(R.id.imgPhotoEditorClose)
-        if (frmBorder != null) {
-            frmBorder.setBackgroundResource(R.drawable.rounded_border_tv)
-            frmBorder.tag = true
-        }
-//        if (imgClose != null) {
-//            imgClose.visibility = View.VISIBLE
-//        }
+        frmBorder?.setBackgroundResource(R.drawable.rounded_border_tv)
     }
 
     protected fun buildGestureController(
