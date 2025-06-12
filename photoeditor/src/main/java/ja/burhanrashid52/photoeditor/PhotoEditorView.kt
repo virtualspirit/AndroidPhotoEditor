@@ -36,6 +36,11 @@ class PhotoEditorView @JvmOverloads constructor(
     private var clipSourceImage = false
 
     init {
+
+        // TAMBAHKAN DUA BARIS INI
+        this.clipChildren = false
+        this.clipToPadding = false
+
         //Setup image attributes
         val sourceParam = setupImageSource(attrs)
         //Setup GLSurface attributes

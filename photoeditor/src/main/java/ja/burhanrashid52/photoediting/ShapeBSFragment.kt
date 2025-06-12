@@ -5,6 +5,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.SeekBar
@@ -23,8 +24,14 @@ class ShapeBSFragment : BottomSheetDialogFragment(), SeekBar.OnSeekBarChangeList
     private lateinit var mRectRadioButton: RadioButton
     private lateinit var mOvalRadioButton: RadioButton
 
-    private var shapeTools: MutableList<String> = mutableListOf() // arrayOf("draw", "line", "arrow", "square", "circle")
+//    private lateinit var mBrushImg: ImageView
+//    private lateinit var mLineImg: ImageView
+//    private lateinit var mArrowImg: ImageView
+//    private lateinit var mRectImg: ImageView
+//    private lateinit var mOvalImg: ImageView
 
+    private var isInteractionReady = false
+    private var shapeTools: MutableList<String> = mutableListOf() // arrayOf("draw", "line", "arrow", "square", "circle")
 
     interface Properties {
         fun onColorChanged(colorCode: Int)
@@ -41,8 +48,17 @@ class ShapeBSFragment : BottomSheetDialogFragment(), SeekBar.OnSeekBarChangeList
         return inflater.inflate(R.layout.fragment_bottom_shapes_dialog, container, false)
     }
 
+    override fun onResume() {
+        super.onResume()
+        view?.postDelayed({
+            isInteractionReady = true
+        }, 100)
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        isInteractionReady = false // Reset flag setiap kali view dibuat ulang
+
         val rvColor: RecyclerView = view.findViewById(R.id.shapeColors)
         val sbOpacity = view.findViewById<SeekBar>(R.id.shapeOpacity)
         val sbBrushSize = view.findViewById<SeekBar>(R.id.shapeSize)
@@ -53,27 +69,10 @@ class ShapeBSFragment : BottomSheetDialogFragment(), SeekBar.OnSeekBarChangeList
         mRectRadioButton = view.findViewById(R.id.rectRadioButton)
         mOvalRadioButton = view.findViewById(R.id.ovalRadioButton)
 
-        // shape picker
-        shapeGroup.setOnCheckedChangeListener { _: RadioGroup?, checkedId: Int ->
-            when (checkedId) {
-                R.id.lineRadioButton -> {
-                    mProperties!!.onShapePicked(ShapeType.Line)
-                }
-                R.id.arrowRadioButton -> {
-                    mProperties!!.onShapePicked(ShapeType.Arrow())
-                }
-                R.id.ovalRadioButton -> {
-                    mProperties!!.onShapePicked(ShapeType.Oval)
-                }
-                R.id.rectRadioButton -> {
-                    mProperties!!.onShapePicked(ShapeType.Rectangle)
-                }
-                else -> {
-                    mProperties!!.onShapePicked(ShapeType.Brush)
-                }
-            }
-        }
 
+        shapeGroup.setOnCheckedChangeListener(null)
+        shapeGroup.clearCheck()
+        
         shapeTools.forEachIndexed { index, tool ->
             when (tool) {
                 "draw" -> {
@@ -109,6 +108,34 @@ class ShapeBSFragment : BottomSheetDialogFragment(), SeekBar.OnSeekBarChangeList
             }
         }
 
+        // shape picker
+        shapeGroup.setOnCheckedChangeListener { _: RadioGroup?, checkedId: Int ->
+            Log.d("DrawingView", "masuk setOnCheckedChangeListener")
+            if (!isInteractionReady) {
+                return@setOnCheckedChangeListener
+            }
+            when (checkedId) {
+                R.id.lineRadioButton -> {
+                    mProperties!!.onShapePicked(ShapeType.Line)
+                }
+                R.id.arrowRadioButton -> {
+                    mProperties!!.onShapePicked(ShapeType.Arrow())
+                }
+                R.id.ovalRadioButton -> {
+                    mProperties!!.onShapePicked(ShapeType.Oval)
+                }
+                R.id.rectRadioButton -> {
+                    mProperties!!.onShapePicked(ShapeType.Rectangle)
+                }
+                R.id.brushRadioButton -> {
+                    mProperties!!.onShapePicked(ShapeType.Brush)
+                }
+                else -> {
+                    mProperties!!.onShapePicked(ShapeType.Brush)
+                }
+            }
+        }
+
 
         sbOpacity.setOnSeekBarChangeListener(this)
         sbBrushSize.setOnSeekBarChangeListener(this)
@@ -123,7 +150,7 @@ class ShapeBSFragment : BottomSheetDialogFragment(), SeekBar.OnSeekBarChangeList
         colorPickerAdapter.setOnColorPickerClickListener(object : OnColorPickerClickListener {
             override fun onColorPickerClickListener(colorCode: Int) {
                 if (mProperties != null) {
-                    dismiss()
+//                    dismiss()
                     mProperties!!.onColorChanged(colorCode)
                 }
             }

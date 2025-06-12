@@ -24,7 +24,7 @@ class EditingToolsAdapter(private val mOnItemSelected: OnItemSelected) :
     private val mToolList: MutableList<ToolModel> = ArrayList()
     private var selectedTool: ToolType? = null
     private var previousPosition: Int = RecyclerView.NO_POSITION
-    private var currentPosition: Int = RecyclerView.NO_POSITION
+    private var currentPosition: Int = 0
     private lateinit var context: Context
 
     interface OnItemSelected {
@@ -44,11 +44,16 @@ class EditingToolsAdapter(private val mOnItemSelected: OnItemSelected) :
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+
         val item = mToolList[position]
         holder.imgToolIcon.setImageResource(item.mToolIcon)
-        if ((item.mToolType == ToolType.ERASER || item.mToolType == ToolType.SHAPE || item.mToolType == ToolType.FILTER) && (item.mToolType == selectedTool)) {
+
+        // Logika penyorotan baru
+        if (position == currentPosition) {
+            // Tool yang sedang aktif
             holder.imgToolIcon.imageTintList = AppCompatResources.getColorStateList(context, R.color.tool_highlight_color)
         } else {
+            // Tool tidak aktif
             holder.imgToolIcon.imageTintList = null
         }
     }
@@ -61,33 +66,49 @@ class EditingToolsAdapter(private val mOnItemSelected: OnItemSelected) :
         val imgToolIcon: ImageView = itemView.findViewById(R.id.imgToolIcon)
 
         init {
-            itemView.setOnClickListener { _: View? ->
-                selectedTool = mToolList[layoutPosition].mToolType
-                previousPosition = currentPosition
-                currentPosition = layoutPosition
-                if (previousPosition != RecyclerView.NO_POSITION) {
-                    notifyItemChanged(previousPosition)
-                }
-                notifyItemChanged(currentPosition)
-                mOnItemSelected.onToolSelected(
-                    mToolList[layoutPosition].mToolType
-                )
+            itemView.setOnClickListener { _ ->
+                val clickedPosition = layoutPosition
+                if (clickedPosition != RecyclerView.NO_POSITION) {
+                    val clickedTool = mToolList[clickedPosition].mToolType
 
+                    mOnItemSelected.onToolSelected(clickedTool)
+
+                    val previousPosition = currentPosition
+                    currentPosition = clickedPosition
+
+                    notifyItemChanged(previousPosition)
+                    notifyItemChanged(currentPosition)
+                }
             }
         }
     }
 
     fun addTool(tool: String) {
         when (tool) {
-            "shape" -> {
-                mToolList.add(ToolModel( R.drawable.ic_shape, ToolType.SHAPE))
-                mToolList.add(ToolModel(R.drawable.ic_eraser, ToolType.ERASER))
-            }
+            "pointer" -> mToolList.add(ToolModel(R.drawable.zl_select, ToolType.POINTER))
+            "shape" -> mToolList.add(ToolModel( R.drawable.ic_shape, ToolType.SHAPE))
             "clip" -> mToolList.add(ToolModel(R.drawable.ic_crop, ToolType.CLIP))
             "text" -> mToolList.add(ToolModel(R.drawable.ic_text, ToolType.TEXT))
             "filter" -> mToolList.add(ToolModel(R.drawable.ic_photo_filter, ToolType.FILTER))
             "emoji" -> mToolList.add(ToolModel(R.drawable.ic_insert_emoticon, ToolType.EMOJI))
             "sticker" -> mToolList.add(ToolModel(R.drawable.ic_sticker, ToolType.STICKER))
         }
+    }
+
+    fun selectTool(toolToSelect: ToolType) {
+        val newPosition = mToolList.indexOfFirst { it.mToolType == toolToSelect }
+        if (newPosition != -1) {
+            val oldPosition = currentPosition
+
+            currentPosition = newPosition
+            selectedTool = toolToSelect
+
+            notifyItemChanged(oldPosition)
+            notifyItemChanged(currentPosition)
+        }
+    }
+
+    init {
+        selectedTool = ToolType.POINTER // Set tool default
     }
 }

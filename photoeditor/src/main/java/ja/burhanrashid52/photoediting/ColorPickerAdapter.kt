@@ -1,6 +1,9 @@
 package ja.burhanrashid52.photoediting
 
+import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -20,6 +23,8 @@ class ColorPickerAdapter internal constructor(
     private val colorPickerColors: List<Int>
     private lateinit var onColorPickerClickListener: OnColorPickerClickListener
 
+    private var selectedPosition: Int = RecyclerView.NO_POSITION
+
     internal constructor(context: Context) : this(context, getDefaultColors(context)) {
         this.context = context
         inflater = LayoutInflater.from(context)
@@ -30,8 +35,15 @@ class ColorPickerAdapter internal constructor(
         return ViewHolder(view)
     }
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.colorPickerView.setBackgroundColor(colorPickerColors[position])
+    override fun onBindViewHolder(holder: ViewHolder, @SuppressLint("RecyclerView") position: Int) {
+        val borderWidth = if (position == selectedPosition) 10 else 4
+
+        val drawable = GradientDrawable()
+        drawable.shape = GradientDrawable.OVAL
+        drawable.setColor(colorPickerColors[position]) // warna dari list
+        drawable.setStroke(borderWidth, Color.WHITE)
+        holder.colorPickerView.background = drawable
+
     }
 
     override fun getItemCount(): Int {
@@ -50,6 +62,10 @@ class ColorPickerAdapter internal constructor(
                 onColorPickerClickListener.onColorPickerClickListener(
                     colorPickerColors[adapterPosition]
                 )
+                val previousSelected = selectedPosition
+                selectedPosition = position
+                notifyItemChanged(previousSelected)
+                notifyItemChanged(position)
             }
         }
     }
@@ -61,16 +77,16 @@ class ColorPickerAdapter internal constructor(
     companion object {
         fun getDefaultColors(context: Context): List<Int> {
             val colorPickerColors = ArrayList<Int>()
-            colorPickerColors.add(ContextCompat.getColor((context), R.color.blue_color_picker))
-            colorPickerColors.add(ContextCompat.getColor((context), R.color.brown_color_picker))
-            colorPickerColors.add(ContextCompat.getColor((context), R.color.green_color_picker))
-            colorPickerColors.add(ContextCompat.getColor((context), R.color.orange_color_picker))
-            colorPickerColors.add(ContextCompat.getColor((context), R.color.red_color_picker))
+            colorPickerColors.add(ContextCompat.getColor((context), R.color.white))
             colorPickerColors.add(ContextCompat.getColor((context), R.color.black))
+            colorPickerColors.add(ContextCompat.getColor((context), R.color.red_color_picker))
+            colorPickerColors.add(ContextCompat.getColor((context), R.color.orange_color_picker))
+            colorPickerColors.add(ContextCompat.getColor((context), R.color.yellow_color_picker))
+            colorPickerColors.add(ContextCompat.getColor((context), R.color.yellow_green_color_picker))
             colorPickerColors.add(
                 ContextCompat.getColor(
                     (context),
-                    R.color.red_orange_color_picker
+                    R.color.green_color_picker
                 )
             )
             colorPickerColors.add(
@@ -79,15 +95,9 @@ class ColorPickerAdapter internal constructor(
                     R.color.sky_blue_color_picker
                 )
             )
+            colorPickerColors.add(ContextCompat.getColor((context), R.color.blue_color_picker))
             colorPickerColors.add(ContextCompat.getColor((context), R.color.violet_color_picker))
-            colorPickerColors.add(ContextCompat.getColor((context), R.color.white))
-            colorPickerColors.add(ContextCompat.getColor((context), R.color.yellow_color_picker))
-            colorPickerColors.add(
-                ContextCompat.getColor(
-                    (context),
-                    R.color.yellow_green_color_picker
-                )
-            )
+            colorPickerColors.add(ContextCompat.getColor((context), R.color.grey))
             return colorPickerColors
         }
     }

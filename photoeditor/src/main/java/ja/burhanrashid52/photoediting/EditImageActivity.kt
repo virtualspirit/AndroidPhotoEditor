@@ -40,10 +40,7 @@ import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import com.yalantis.ucrop.UCrop
-import com.yalantis.ucrop.UCropFragment
-import com.yalantis.ucrop.UCropFragmentCallback
-import com.yalantis.ucrop.callback.BitmapCropCallback
+import com.yalantis.ucrop.UCrop.*
 import ja.burhanrashid52.photoediting.EmojiBSFragment.EmojiListener
 import ja.burhanrashid52.photoediting.StickerBSFragment.StickerListener
 import ja.burhanrashid52.photoediting.base.BaseActivity
@@ -55,6 +52,7 @@ import ja.burhanrashid52.photoediting.tools.EditingToolsAdapter.OnItemSelected
 import ja.burhanrashid52.photoediting.tools.ToolType
 import ja.burhanrashid52.photoeditor.OnPhotoEditorListener
 import ja.burhanrashid52.photoeditor.PhotoEditor
+import ja.burhanrashid52.photoeditor.PhotoEditorImpl
 import ja.burhanrashid52.photoeditor.PhotoEditorView
 import ja.burhanrashid52.photoeditor.PhotoFilter
 import ja.burhanrashid52.photoeditor.R
@@ -68,7 +66,6 @@ import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-import kotlin.math.log
 
 class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickListener,
     PropertiesBSFragment.Properties, ShapeBSFragment.Properties, EmojiListener, StickerListener,
@@ -78,7 +75,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     private lateinit var mPhotoEditorView: PhotoEditorView
     private lateinit var mPropertiesBSFragment: PropertiesBSFragment
     private lateinit var mShapeBSFragment: ShapeBSFragment
-    private lateinit var mShapeBuilder: ShapeBuilder
+    private val mShapeBuilder = ShapeBuilder()
     private lateinit var mEmojiBSFragment: EmojiBSFragment
     private lateinit var mStickerBSFragment: StickerBSFragment
     private lateinit var mTxtCurrentTool: TextView
@@ -87,6 +84,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     private lateinit var mRvFilters: RecyclerView
     private lateinit var mImgUndo: View
     private lateinit var mImgRedo: View
+    private lateinit var mImgDelete: View
     private val mEditingToolsAdapter = EditingToolsAdapter(this)
     private val mFilterViewAdapter = FilterViewAdapter(this)
     private lateinit var mRootView: ConstraintLayout
@@ -158,7 +156,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
             "line",
             "arrow",
             "square",
-            "circle")
+            "circle", "pointer")
 
         value?.getStringArray("tools")?.let {
             tools = it
@@ -251,6 +249,10 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         mImgRedo.setOnClickListener(this)
         mImgRedo.isEnabled = false
 
+        mImgDelete = findViewById(R.id.imgRemove)
+        mImgDelete.setOnClickListener(this)
+        mImgDelete.isEnabled = false
+
         val imgCamera: ImageView = findViewById(R.id.imgCamera)
         imgCamera.setOnClickListener(this)
 
@@ -268,6 +270,9 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     }
 
     private fun initTools(tools: Array<String>)  {
+        if ("pointer" in tools) {
+            mEditingToolsAdapter.addTool("pointer")
+        }
         if ("draw" in tools || "line" in tools || "square" in tools || "circle" in tools || "arrow" in tools) {
             mEditingToolsAdapter.addTool("shape")
 
@@ -342,6 +347,8 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
 
     override fun onStartViewChangeListener(viewType: ViewType) {
         Log.d(TAG, "onStartViewChangeListener() called with: viewType = [$viewType]")
+        mImgDelete.isEnabled = true
+
     }
 
     override fun onStopViewChangeListener(viewType: ViewType) {
@@ -350,6 +357,10 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
 
     override fun onTouchSourceImage(event: MotionEvent) {
         Log.d(TAG, "onTouchView() called with: event = [$event]")
+    }
+
+    override fun onShapeCreated() {
+        mEditingToolsAdapter.selectTool(ToolType.POINTER)
     }
 
     @SuppressLint("NonConstantResourceId", "MissingPermission")
@@ -363,6 +374,10 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
             R.id.imgRedo -> {
                 mImgUndo.isEnabled = mPhotoEditor.isUndoAvailable
                 mImgRedo.isEnabled = mPhotoEditor.redo()
+            }
+
+            R.id.imgRemove -> {
+                mPhotoEditor.deleteSelectedView()
             }
 
             R.id.btnDone -> saveImage()
@@ -511,22 +526,26 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     }
 
     override fun onColorChanged(colorCode: Int) {
-        mPhotoEditor.setShape(mShapeBuilder.withShapeColor(colorCode))
+        mShapeBuilder.withShapeColor(colorCode)
+        mPhotoEditor.setShape(mShapeBuilder)
         mTxtCurrentTool.setText(R.string.label_brush)
     }
 
     override fun onOpacityChanged(opacity: Int) {
+        mShapeBuilder.withShapeOpacity(opacity)
         mPhotoEditor.setShape(mShapeBuilder.withShapeOpacity(opacity))
         mTxtCurrentTool.setText(R.string.label_brush)
     }
 
     override fun onShapeSizeChanged(shapeSize: Int) {
+        mShapeBuilder.withShapeSize(shapeSize.toFloat())
         mPhotoEditor.setShape(mShapeBuilder.withShapeSize(shapeSize.toFloat()))
         mTxtCurrentTool.setText(R.string.label_brush)
     }
 
     override fun onShapePicked(shapeType: ShapeType) {
-        mPhotoEditor.setShape(mShapeBuilder.withShapeType(shapeType))
+        mShapeBuilder.withShapeType(shapeType)
+        mPhotoEditor.setShape(mShapeBuilder)
     }
 
     override fun onEmojiClick(emojiUnicode: String) {
@@ -561,14 +580,20 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     }
 
     override fun onToolSelected(toolType: ToolType) {
+
+        if (toolType != ToolType.SHAPE) {
+            Log.d("DrawingView", "ga masuk sini")
+            (mPhotoEditor as PhotoEditorImpl).exitAllDrawingModes() // Buat method baru ini
+        } else{
+            Log.d("DrawingView", "malah masuk sini")
+            (mPhotoEditor as PhotoEditorImpl).enterShapeCreatingMode()
+        }
+
         when (toolType) {
             ToolType.SHAPE -> {
-                mPhotoEditor.setBrushDrawingMode(true)
-                mShapeBuilder = ShapeBuilder()
-                mPhotoEditor.setShape(mShapeBuilder)
+                Log.d("DrawingView", "masuk")
                 mTxtCurrentTool.setText(R.string.label_shape)
                 showBottomSheetDialogFragment(mShapeBSFragment)
-                showFilter(false)
             }
 
             ToolType.TEXT -> {
@@ -582,12 +607,6 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
                         mTxtCurrentTool.setText(R.string.label_text)
                     }
                 })
-                showFilter(false)
-            }
-
-            ToolType.ERASER -> {
-                mPhotoEditor.brushEraser()
-                mTxtCurrentTool.setText(R.string.label_eraser_mode)
                 showFilter(false)
             }
 
@@ -606,19 +625,29 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
             }
             ToolType.CLIP -> {
                 sourceUri?.let {
-                    UCrop.of(it, it)
+                    val options =
+                        Options()
+                    options.setFreeStyleCropEnabled (true)
+                    of(it, it)
                         .withMaxResultSize(2048, 2048)
+                        .withOptions(options)
                         .start(this)
                 };
                 showFilter(false)
+            }
+
+            ToolType.POINTER -> {
+                mTxtCurrentTool.setText(R.string.label_pointer)
             }
         }
     }
 
     private fun showBottomSheetDialogFragment(fragment: BottomSheetDialogFragment?) {
-        if (fragment == null || fragment.isAdded) {
+        Log.d("DrawingView", "masuk 1")
+        if (fragment == null) {
             return
         }
+        Log.d("DrawingView", "masuk 2")
         fragment.show(supportFragmentManager, fragment.tag)
     }
 
@@ -676,6 +705,10 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
         outputStream.close()
         return file.toUri()
+    }
+
+    fun hideDeleteButton() {
+        mImgDelete.isEnabled = false
     }
 
     companion object {

@@ -6,6 +6,7 @@ import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.MotionEvent
 import android.view.View
 import android.view.View.OnTouchListener
+import android.widget.FrameLayout
 import android.widget.ImageView
 import kotlin.math.max
 import kotlin.math.min
@@ -18,7 +19,8 @@ import kotlin.math.min
  *
  */
 internal class MultiTouchListener(
-    deleteView: View?,
+//    deleteView: View?,
+    private val mDeleteView: View?,
     photoEditorView: PhotoEditorView,
     photoEditImageView: ImageView?,
     private val mIsPinchScalable: Boolean,
@@ -62,8 +64,21 @@ internal class MultiTouchListener(
                 mPrevRawX = event.rawX
                 mPrevRawY = event.rawY
                 mActivePointerId = event.getPointerId(0)
-                if (deleteView != null) {
-                    deleteView.visibility = View.VISIBLE
+
+                if (viewState.currentSelectedView !== view) {
+                    viewState.currentSelectedView?.let {
+                        val frmBorder = it.findViewById<FrameLayout>(R.id.frmBorder)
+                        frmBorder?.setBackgroundResource(0)
+                    }
+
+                    viewState.currentSelectedView = view
+
+                    val frmBorder = view.findViewById<FrameLayout>(R.id.frmBorder)
+                    frmBorder?.setBackgroundResource(R.drawable.rounded_border_tv)
+                }
+
+                if (mDeleteView != null) {
+                    mDeleteView.isEnabled = true
                 }
                 view.bringToFront()
                 firePhotoEditorSDKListener(view, true)
@@ -86,8 +101,8 @@ internal class MultiTouchListener(
                if (!isViewInBounds(photoEditImageView, x, y)) {
                     view.animate().translationY(0f).translationY(0f)
                 }
-                if (deleteView != null) {
-                    deleteView.visibility = View.GONE
+                if (mDeleteView != null) {
+                    mDeleteView.visibility = View.GONE
                 }
                 firePhotoEditorSDKListener(view, false)
             }
@@ -239,7 +254,7 @@ internal class MultiTouchListener(
     init {
         mScaleGestureDetector = ScaleGestureDetector(ScaleGestureListener())
         mGestureListener = GestureDetector(GestureListener())
-        this.deleteView = deleteView
+        this.deleteView = mDeleteView
         this.photoEditorView = photoEditorView
         this.photoEditImageView = photoEditImageView
         mOnPhotoEditorListener = onPhotoEditorListener

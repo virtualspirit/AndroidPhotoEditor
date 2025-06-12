@@ -31,4 +31,10 @@ class BrushShape : AbstractShape("BrushShape") {
     override fun stopShape() {
         Log.d(tag, "stopShape")
     }
+
+    override fun hasBeenTapped(): Boolean {
+        // Goresan kuas, bahkan yang pendek sekalipun, harus dianggap valid.
+        // Kita tidak ingin goresan pendek dibatalkan.
+        return false
+    }
 }

@@ -1,5 +1,7 @@
 package ja.burhanrashid52.photoeditor
 
+import ja.burhanrashid52.photoeditor.shape.AbstractShape
+
 /**
  * Created by Burhanuddin Rashid on 17/05/21.
  *
@@ -15,8 +17,8 @@ class BrushDrawingStateListener internal constructor(
     }
 
     override fun onViewAdd(drawingView: DrawingView) {
-        if (mViewState.redoViewsCount > 0) {
-            mViewState.popRedoView()
+        if (mViewState.redoActionsCount > 0) {
+            mViewState.popRedoAction()
         }
         mViewState.addAddedView(drawingView)
         mOnPhotoEditorListener?.onAddViewListener(
@@ -33,7 +35,8 @@ class BrushDrawingStateListener internal constructor(
             if (removeView !is DrawingView) {
                 mPhotoEditorView.removeView(removeView)
             }
-            mViewState.pushRedoView(removeView)
+            val lastAction = mViewState.popUndoAction()
+            mViewState.pushRedoAction(lastAction)
         }
         mOnPhotoEditorListener?.onRemoveViewListener(
             ViewType.BRUSH_DRAWING,
@@ -47,9 +50,17 @@ class BrushDrawingStateListener internal constructor(
     }
 
     override fun onStopDrawing() {
-        if (mViewState.redoViewsCount > 0) {
-            mViewState.clearRedoViews()
+        if (mViewState.redoActionsCount > 0) {
+            mViewState.clearRedoActions()
         }
         mOnPhotoEditorListener?.onStopViewChangeListener(ViewType.BRUSH_DRAWING)
+    }
+
+    override fun onShapeCreated(
+        shape: AbstractShape,
+        touchX: Float,
+        touchY: Float
+    ) {
+        TODO("Not yet implemented")
     }
 }

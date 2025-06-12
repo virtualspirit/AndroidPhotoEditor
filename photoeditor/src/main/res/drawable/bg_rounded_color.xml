@@ -1,0 +1,9 @@
+<!-- res/drawable/bg_rounded_color.xml -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="16dp"/>
+    <solid android:color="#000000"/> <!-- akan diubah dari Kotlin -->
+    <stroke
+        android:width="2dp"
+        android:color="#FFFFFF"/> <!-- juga bisa diubah dari Kotlin -->
+</shape>

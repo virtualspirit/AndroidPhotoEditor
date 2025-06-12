@@ -1,15 +1,23 @@
-<?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content">
+<!--<?xml version="1.0" encoding="utf-8"?>-->
+<!--<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"-->
+<!--    xmlns:tools="http://schemas.android.com/tools"-->
+<!--    android:layout_width="wrap_content"-->
+<!--    android:layout_height="wrap_content">-->
 
-    <View
-        android:id="@+id/color_picker_view"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_alignParentTop="true"
-        android:paddingHorizontal="10dp"
-        android:layout_marginEnd="4dp" />
+<!--    <View-->
+<!--        android:id="@+id/color_picker_view"-->
+<!--        android:layout_width="40dp"-->
+<!--        android:layout_height="40dp"-->
+<!--        android:layout_alignParentTop="true"-->
+<!--        android:paddingHorizontal="10dp"-->
+<!--        android:layout_marginEnd="4dp" />-->
 
-</RelativeLayout>
+<!--</RelativeLayout>-->
+
+<!-- res/layout/item_color.xml -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/color_picker_view"
+    android:layout_width="26dp"
+    android:layout_height="26dp"
+    android:layout_margin="6dp"
+    android:background="@drawable/bg_rounded_color" />

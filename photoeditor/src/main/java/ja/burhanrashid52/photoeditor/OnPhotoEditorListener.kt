@@ -65,4 +65,6 @@ interface OnPhotoEditorListener {
      * @param event the MotionEvent associated to the touch.
      */
     fun onTouchSourceImage(event: MotionEvent)
+
+    fun onShapeCreated()
 }

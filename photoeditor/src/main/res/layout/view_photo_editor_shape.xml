@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/frmBorder"
+    android:layout_width="150dp"
+    android:layout_height="100dp"
+    android:background="@drawable/rounded_border_tv">
+
+    <ja.burhanrashid52.photoeditor.shape.ShapeView
+        android:id="@+id/shape_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:ignore="ContentDescription" />
+
+    <ImageView
+        android:id="@+id/imgPhotoEditorClose"
+        android:layout_width="25dp"
+        android:layout_height="25dp"
+        android:layout_gravity="top|start"
+        android:elevation="1dp"
+        android:visibility="gone"
+        app:srcCompat="@drawable/ic_remove" />
+
+</FrameLayout>

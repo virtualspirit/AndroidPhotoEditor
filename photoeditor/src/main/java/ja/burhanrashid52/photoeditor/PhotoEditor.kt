@@ -126,19 +126,6 @@ interface PhotoEditor {
     fun setOpacity(@IntRange(from = 0, to = 100) opacity: Int)
 
     /**
-     * set the eraser size
-     * **Note :** Eraser size is different from the normal brush size
-     *
-     * @param brushEraserSize size of eraser
-     */
-    fun setBrushEraserSize(brushEraserSize: Float)
-
-    /**
-     * @return provide the size of eraser
-     * @see PhotoEditor.setBrushEraserSize
-     */
-    val eraserSize: Float
-    /**
      * @return provide the size of eraser
      * @see PhotoEditor.setBrushSize
      */
@@ -166,18 +153,6 @@ interface PhotoEditor {
       """
     )
     var brushColor: Int
-
-    /**
-     *
-     *
-     * Its enables eraser mode after that whenever user drags on screen this will erase the existing
-     * paint
-     * <br></br>
-     * **Note** : This eraser will work on paint views only
-     *
-     *
-     */
-    fun brushEraser()
 
     /**
      * Undo the last operation perform on the [PhotoEditor]
@@ -383,4 +358,6 @@ interface PhotoEditor {
      * through the use of a ShapeBuilder.
      */
     fun setShape(shapeBuilder: ShapeBuilder) // endregion
+
+    fun deleteSelectedView(): Boolean
 }

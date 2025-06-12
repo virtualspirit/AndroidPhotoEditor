@@ -22,6 +22,7 @@ internal class BoxHelper(
             imgClose?.visibility = View.GONE
         }
         mViewState.clearCurrentSelectedView()
+        mViewState.deleteView?.isEnabled = false
     }
 
     fun clearAllViews(drawingView: DrawingView?) {
@@ -35,7 +36,8 @@ internal class BoxHelper(
         }
 
         mViewState.clearAddedViews()
-        mViewState.clearRedoViews()
+        mViewState.clearRedoActions()
+        mViewState.clearUndoActions()
         drawingView?.clearAll()
     }
 }

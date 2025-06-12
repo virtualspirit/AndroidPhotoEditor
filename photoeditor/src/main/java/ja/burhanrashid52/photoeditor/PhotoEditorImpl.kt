@@ -4,15 +4,21 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Color
+import android.graphics.Path
 import android.graphics.Typeface
 import android.text.TextUtils
+import android.util.Log
 import android.view.GestureDetector
 import android.view.View
 import android.widget.ImageView
+import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.annotation.IntRange
 import androidx.annotation.RequiresPermission
+import ja.burhanrashid52.photoediting.EditImageActivity
 import ja.burhanrashid52.photoeditor.PhotoEditorImageViewListener.OnSingleTapUpCallback
+import ja.burhanrashid52.photoeditor.shape.AbstractShape
 import ja.burhanrashid52.photoeditor.shape.ShapeBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -32,7 +38,7 @@ import kotlinx.coroutines.withContext
  */
 internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") constructor(
     builder: PhotoEditor.Builder
-) : PhotoEditor {
+) : PhotoEditor, BrushViewChangeListener {
     private val photoEditorView: PhotoEditorView = builder.photoEditorView
     private val viewState: PhotoEditorViewState = PhotoEditorViewState()
     private val imageView: ImageView = builder.imageView
@@ -126,10 +132,22 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
     }
 
     private fun addToEditor(graphic: Graphic) {
+//        clearHelperBox()
+//        mGraphicManager.addView(graphic)
+//        // Change the in-focus view
+//        viewState.currentSelectedView = graphic.rootView
+
+        // Hapus border dari view yang mungkin sedang fokus
         clearHelperBox()
+
         mGraphicManager.addView(graphic)
-        // Change the in-focus view
+
+        // Jadikan graphic yang baru ditambahkan sebagai view yang sedang terpilih
         viewState.currentSelectedView = graphic.rootView
+
+        // Secara manual panggil method untuk menampilkan border/handle-nya
+        // Kita bisa mengekstrak logika ini dari MultiTouchListener atau Graphic
+        graphic.toggleSelection() // Kita perlu membuat method ini public/internal di Graphic.kt
     }
 
     /**
@@ -150,6 +168,7 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
     }
 
     override fun setBrushDrawingMode(brushDrawingMode: Boolean) {
+        Log.d("DrawingView", "Entering Shape Creating Mode...")
         drawingView.enableDrawing(brushDrawingMode)
     }
 
@@ -172,29 +191,6 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
         set(color) {
             drawingView.currentShapeBuilder.withShapeColor(color)
         }
-
-    override fun setBrushEraserSize(brushEraserSize: Float) {
-        drawingView.eraserSize = brushEraserSize
-    }
-
-    override val eraserSize: Float
-        get() = drawingView.eraserSize
-
-    override fun brushEraser() {
-        drawingView.brushEraser()
-    }
-
-    override fun undo(): Boolean {
-        return mGraphicManager.undoView()
-    }
-
-    override val isUndoAvailable get() = viewState.addedViewsCount > 0
-
-    override fun redo(): Boolean {
-        return mGraphicManager.redoView()
-    }
-
-    override val isRedoAvailable get() = mGraphicManager.redoStackCount > 0
 
     override fun clearAllViews() {
         mBoxHelper.clearAllViews(drawingView)
@@ -274,8 +270,136 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
         drawingView.currentShapeBuilder = shapeBuilder
     } // endregion
 
+    // Implementasikan semua metode dari BrushViewChangeListener
+    override fun onViewAdd(drawingView: DrawingView) {
+        // Logika untuk brush mode
+        mOnPhotoEditorListener?.onAddViewListener(ViewType.BRUSH_DRAWING, viewState.addedViewsCount)
+        viewState.addAddedView(drawingView)
+    }
+
+    override fun onViewRemoved(drawingView: DrawingView) {
+        // Logika untuk brush mode
+        mOnPhotoEditorListener?.onRemoveViewListener(ViewType.BRUSH_DRAWING, viewState.addedViewsCount)
+        viewState.removeAddedView(drawingView)
+    }
+
+    override fun onStartDrawing() {
+        mOnPhotoEditorListener?.onStartViewChangeListener(ViewType.BRUSH_DRAWING)
+    }
+
+    override fun onStopDrawing() {
+        mOnPhotoEditorListener?.onStopViewChangeListener(ViewType.BRUSH_DRAWING)
+    }
+
+    override fun onShapeCreated(shape: AbstractShape, touchX: Float, touchY: Float) {
+        val bounds = shape.bounds
+        if (bounds.width() < AbstractShape.TOUCH_TOLERANCE || bounds.height() < AbstractShape.TOUCH_TOLERANCE) return
+
+        val shapeBuilder = drawingView.currentShapeBuilder
+
+        // Gunakan float untuk presisi lebih tinggi, dan tambahkan safety margin
+        val halfStrokeWidth = shapeBuilder.shapeSize / 2f
+        val safetyMargin = 2 // 2 piksel ekstra untuk keamanan
+
+        val translatedPath = Path(shape.path)
+        translatedPath.offset(-bounds.left + halfStrokeWidth, -bounds.top + halfStrokeWidth)
+
+        val multiTouchListener = getMultiTouchListener(true)
+        val shapeGraphic = Shape(photoEditorView, multiTouchListener, viewState, mGraphicManager)
+
+        shapeGraphic.buildView(shapeBuilder, translatedPath)
+
+        // Gunakan Math.ceil untuk pembulatan ke atas
+        val newWidth = Math.ceil((bounds.width() + shapeBuilder.shapeSize).toDouble()).toInt() + safetyMargin
+        val newHeight = Math.ceil((bounds.height() + shapeBuilder.shapeSize).toDouble()).toInt() + safetyMargin
+
+        val params = RelativeLayout.LayoutParams(
+            newWidth.coerceAtLeast(1),
+            newHeight.coerceAtLeast(1)
+        )
+
+        params.leftMargin = (bounds.left - halfStrokeWidth).toInt() - (safetyMargin / 2)
+        params.topMargin = (bounds.top - halfStrokeWidth).toInt() - (safetyMargin / 2)
+//
+//        params.leftMargin = touchX.toInt()
+//        params.topMargin = touchY.toInt()
+
+        Log.e("DrawingView", "Shape 1: ${bounds.top} ${shapeBuilder.shapeSize} $safetyMargin")
+        Log.e("DrawingView", "Shape params: ${params.leftMargin} ${params.topMargin}")
+
+        shapeGraphic.rootView.layoutParams = params
+
+        addToEditor(shapeGraphic)
+
+        drawingView.isShapeCreatingMode = false
+        setBrushDrawingMode(false)
+
+        mOnPhotoEditorListener?.onShapeCreated()
+    }
+
+    fun enterShapeCreatingMode() {
+        Log.d("DrawingView", "Entering Shape Creating Mode...")
+        drawingView.isShapeCreatingMode = true
+        setBrushDrawingMode(true) // Ini akan memanggil enableDrawing(true) di DrawingView
+    }
+
+    fun exitAllDrawingModes() {
+        Log.d("DrawingView", "exitShapeCreatingMode ${drawingView.isShapeCreatingMode} ${drawingView.isDrawingEnabled}")
+        drawingView.isShapeCreatingMode = false
+        setBrushDrawingMode(false)
+    }
+
+//    override fun deleteSelectedView(): Boolean {
+//        val currentView = viewState.currentSelectedView
+//        if (currentView != null) {
+//            if (mGraphicManager.removeViewBy(currentView)) {
+//                viewState.clearCurrentSelectedView()
+//                // Setelah menghapus, sembunyikan tombol hapus
+//                (context as? EditImageActivity)?.hideDeleteButton()
+//                return true
+//            }
+//        }
+//        return false
+//    }
+
+    override fun deleteSelectedView(): Boolean {
+        val currentView = viewState.currentSelectedView
+        if (currentView != null) {
+            if (mGraphicManager.removeView(currentView)) {
+                viewState.clearCurrentSelectedView()
+                (context as? EditImageActivity)?.hideDeleteButton()
+                return true
+            }
+        }
+        return false
+    }
+
+    override fun undo(): Boolean {
+        return mGraphicManager.undo()
+    }
+
+    override fun redo(): Boolean {
+        return mGraphicManager.redo()
+    }
+
+    override val isUndoAvailable get() = viewState.undoActionsCount > 0
+    override val isRedoAvailable get() =  viewState.redoActionsCount > 0
+
+//    override fun undo(): Boolean {
+//        return mGraphicManager.undoView()
+//    }
+//
+//    override val isUndoAvailable get() = viewState.addedViewsCount > 0
+//
+//    override fun redo(): Boolean {
+//        return mGraphicManager.redoView()
+//    }
+//
+//    override val isRedoAvailable get() = mGraphicManager.redoStackCount > 0
+
     init {
-        drawingView.setBrushViewChangeListener(mBrushDrawingStateListener)
+        viewState.deleteView = deleteView
+        drawingView.setBrushViewChangeListener(this)
         val mDetector = GestureDetector(
             context,
             PhotoEditorImageViewListener(
@@ -283,10 +407,14 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
                 object : OnSingleTapUpCallback {
                     override fun onSingleTapUp() {
                         clearHelperBox()
+                        // Saat helper box dibersihkan (karena tap di area kosong),
+                        // sembunyikan juga tombol hapus.
+                        (context as? EditImageActivity)?.hideDeleteButton()
                     }
                 }
             )
         )
+
         imageView.setOnTouchListener { _, event ->
             mOnPhotoEditorListener?.onTouchSourceImage(event)
             mDetector.onTouchEvent(event)
