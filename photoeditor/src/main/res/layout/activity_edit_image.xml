@@ -67,6 +67,16 @@
         app:layout_constraintEnd_toStartOf="@+id/imgRemove" />
 
     <ImageView
+        android:id="@+id/imgPalette"
+        android:layout_width="@dimen/top_tool_icon_width"
+        android:layout_height="wrap_content"
+        android:background="@color/semi_black_transparent"
+        android:padding="8dp"
+        android:src="@drawable/palette"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/imgRemove" />
+
+    <ImageView
         android:id="@+id/imgGallery"
         android:layout_width="@dimen/top_tool_icon_width"
         android:layout_height="wrap_content"

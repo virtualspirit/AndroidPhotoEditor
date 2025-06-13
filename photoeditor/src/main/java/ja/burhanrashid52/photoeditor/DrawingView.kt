@@ -86,17 +86,15 @@ class DrawingView @JvmOverloads constructor(
      */
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        Log.d("DrawingView 1", "onTouchEvent: action=${event.action}, isDrawingEnabled=$isDrawingEnabled")
-        // Hanya proses jika drawing diaktifkan
+        Log.d("DrawingView", "onTouchEvent: action=${event.action}, isDrawingEnabled=$isDrawingEnabled")
         if (!isDrawingEnabled) return false
-        Log.d("DrawingView 2", "onTouchEvent: action=${event.action}, isDrawingEnabled=$isDrawingEnabled")
 
         val touchX = event.x
         val touchY = event.y
         when (event.action) {
             MotionEvent.ACTION_DOWN -> onTouchEventDown(touchX, touchY)
             MotionEvent.ACTION_MOVE -> onTouchEventMove(touchX, touchY)
-            MotionEvent.ACTION_UP -> onTouchEventUp(touchX, touchY) // Tidak perlu koordinat lagi
+            MotionEvent.ACTION_UP -> onTouchEventUp(touchX, touchY)
         }
         invalidate()
         return true
@@ -123,7 +121,6 @@ class DrawingView @JvmOverloads constructor(
                 Log.d("DrawingView", "onShapeCreated is being called.")
                 viewChangeListener?.onShapeCreated(finalShape, touchX, touchY)
             } else {
-                // Mode brush: selesaikan gambar
                 finalShape.stopShape()
                 viewChangeListener?.onStopDrawing()
                 if (redoShapes.isNotEmpty()) {
@@ -134,7 +131,6 @@ class DrawingView @JvmOverloads constructor(
         } else {
             Log.d("DrawingView", "onTouchEventUp: finalShape is null!")
         }
-        // SELALU bersihkan path preview dari DrawingView setelah selesai
         drawShapes.clear()
         invalidate()
         currentShape = null

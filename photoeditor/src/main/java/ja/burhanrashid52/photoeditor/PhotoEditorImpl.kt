@@ -46,8 +46,6 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
     private val imageView: ImageView = builder.imageView
     private val deleteView: View? = builder.deleteView
     private val drawingView: DrawingView = builder.drawingView
-//    private val mBrushDrawingStateListener: BrushDrawingStateListener =
-//        BrushDrawingStateListener(builder.photoEditorView, viewState)
     private val mBoxHelper: BoxHelper = BoxHelper(builder.photoEditorView, viewState)
     private var mOnPhotoEditorListener: OnPhotoEditorListener? = null
     private val isTextPinchScalable: Boolean = builder.isTextPinchScalable
@@ -199,7 +197,6 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
         val tagData = originalView.tag as? Pair<*, *>
         val originalGraphic = tagData?.second as? Graphic
 
-        // Log untuk memeriksa apa itu originalGraphic
         Log.d("DUPLICATE_DEBUG", "Attempting to duplicate a graphic of type: ${originalGraphic?.javaClass?.simpleName}")
 
         if (originalGraphic == null) {
@@ -209,7 +206,6 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
 
         val originalTransform = ViewTransform.from(originalView)
 
-        // Panggil metode add... dan TANGKAP HASILNYA secara langsung
         val newGraphic: Graphic? = when (originalGraphic) {
             is Text -> {
                 val originalTextView = originalView.findViewById<TextView>(R.id.tvPhotoEditorText)
@@ -217,14 +213,9 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
                 val styleBuilder = TextStyleBuilder().apply {
                     withTextColor(originalTextView.currentTextColor)
 
-                    // =======================================================
-                    // PERBAIKAN DI SINI
-                    // =======================================================
-                    // Hanya panggil withTextFont jika typeface-nya tidak null
                     originalTextView.typeface?.let {
                         withTextFont(it)
                     }
-                    // =======================================================
                 }
                 addText(text, styleBuilder)
             }
@@ -236,7 +227,7 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
                 val recipe = originalGraphic.getRecipe()
                 if (recipe == null) {
                     Log.e("DUPLICATE_DEBUG", "RECIPE IS NULL! Cannot duplicate shape.")
-                    null // Ini akan membuat newGraphic menjadi null
+                    null
                 }
 
                 originalGraphic.getRecipe()?.let { recipe ->
@@ -249,29 +240,24 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
             }
         }
 
-        // Jika pembuatan graphic baru gagal, hentikan proses
         if (newGraphic == null) {
             Log.e("DUPLICATE_ERROR", "New graphic creation returned null.")
             return false
         }
 
-        // Dapatkan view dari graphic yang baru dibuat
         val newView = newGraphic.rootView
 
-        // Pastikan kita tidak memanipulasi view yang sama
         if (newView == originalView) {
             Log.e("DUPLICATE_ERROR", "New view is the same as the original view. Aborting.")
             return false
         }
 
-        // Terapkan transformasi dari objek LAMA ke objek BARU, lalu geser.
         originalTransform.applyTo(newView)
 
         val offset = 30f
         newView.translationX += offset
         newView.translationY += offset
 
-        // Buat aksi undo/redo untuk transformasi objek BARU.
         val finalTransform = ViewTransform.from(newView)
         onTransform(newView, originalTransform, finalTransform)
 
@@ -376,15 +362,12 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
         drawingView.currentShapeBuilder = shapeBuilder
     } // endregion
 
-    // Implementasikan semua metode dari BrushViewChangeListener
     override fun onViewAdd(drawingView: DrawingView) {
-        // Logika untuk brush mode
         mOnPhotoEditorListener?.onAddViewListener(ViewType.BRUSH_DRAWING, viewState.addedViewsCount)
         viewState.addAddedView(drawingView)
     }
 
     override fun onViewRemoved(drawingView: DrawingView) {
-        // Logika untuk brush mode
         mOnPhotoEditorListener?.onRemoveViewListener(ViewType.BRUSH_DRAWING, viewState.addedViewsCount)
         viewState.removeAddedView(drawingView)
     }
@@ -403,9 +386,14 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
 
         val shapeBuilder = drawingView.currentShapeBuilder
 
-        // Gunakan float untuk presisi lebih tinggi, dan tambahkan safety margin
+        // Dapatkan posisi Y dari ImageView sumber (tempat gambar ditampilkan)
+        val sourceImageViewTop = imageView.top.toFloat()
+
+        // Hitung posisi Y yang benar dengan menambahkan offset dari ImageView
+        val correctedTop = bounds.top + sourceImageViewTop
+
         val halfStrokeWidth = shapeBuilder.shapeSize / 2f
-        val safetyMargin = 2 // 2 piksel ekstra untuk keamanan
+        val safetyMargin = 2
 
         val translatedPath = Path(shape.path)
         translatedPath.offset(-bounds.left + halfStrokeWidth, -bounds.top + halfStrokeWidth)
@@ -415,7 +403,6 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
 
         shapeGraphic.buildView(shapeBuilder, translatedPath)
 
-        // Gunakan Math.ceil untuk pembulatan ke atas
         val newWidth = Math.ceil((bounds.width() + shapeBuilder.shapeSize).toDouble()).toInt() + safetyMargin
         val newHeight = Math.ceil((bounds.height() + shapeBuilder.shapeSize).toDouble()).toInt() + safetyMargin
 
@@ -425,13 +412,14 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
         )
 
         params.leftMargin = (bounds.left - halfStrokeWidth).toInt() - (safetyMargin / 2)
-        params.topMargin = (bounds.top - halfStrokeWidth).toInt() - (safetyMargin / 2)
+        params.topMargin = (correctedTop - halfStrokeWidth).toInt() - (safetyMargin / 2)
+//        params.topMargin = touchY.toInt() * 2
 //
 //        params.leftMargin = touchX.toInt()
 //        params.topMargin = touchY.toInt()
 
-        Log.e("DrawingView", "Shape 1: ${bounds.top} ${shapeBuilder.shapeSize} $safetyMargin")
-        Log.e("DrawingView", "Shape params: ${params.leftMargin} ${params.topMargin}")
+        Log.e("wew", "Shape 1: ${bounds.top} ${shapeBuilder.shapeSize} $safetyMargin")
+        Log.e("wew", "Shape params: ${params.leftMargin} ${params.topMargin} ${touchX.toInt()} ${touchY.toInt()}")
 
         shapeGraphic.rootView.layoutParams = params
 
@@ -446,7 +434,7 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
     fun enterShapeCreatingMode() {
         Log.d("DrawingView", "Entering Shape Creating Mode...")
         drawingView.isShapeCreatingMode = true
-        setBrushDrawingMode(true) // Ini akan memanggil enableDrawing(true) di DrawingView
+        setBrushDrawingMode(true)
     }
 
     fun exitAllDrawingModes() {
@@ -471,14 +459,10 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
     override fun undo(): Boolean {
         clearHelperBox()
 
-        val undoneView = mGraphicManager.undo() // Panggil versi baru
+        val undoneView = mGraphicManager.undo()
 
         if (undoneView != null) {
-            // Periksa aksi apa yang baru saja di-undo.
-            // Kita perlu tahu ini. Mari kita modifikasi GraphicManager lagi.
-            // ... Ini menjadi rumit.
 
-            // MARI KITA KEMBALI KE PENDEKATAN YANG LEBIH SEDERHANA DAN EFEKTIF.
         }
         return viewState.undoActionsCount > 0
     }
@@ -515,7 +499,7 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
             imageView,
             builder.isTextPinchScalable,
             viewState,
-            this // 'this' untuk OnTransformAction
+            this
         )
 
         viewState.deleteView = deleteView
@@ -527,8 +511,6 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
                 object : OnSingleTapUpCallback {
                     override fun onSingleTapUp() {
                         clearHelperBox()
-                        // Saat helper box dibersihkan (karena tap di area kosong),
-                        // sembunyikan juga tombol hapus.
                         (context as? EditImageActivity)?.hideDeleteButton()
                     }
                 }

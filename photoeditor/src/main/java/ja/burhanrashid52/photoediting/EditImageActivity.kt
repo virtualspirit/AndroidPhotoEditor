@@ -86,6 +86,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     private lateinit var mImgRedo: View
     private lateinit var mImgDelete: View
     private lateinit var mImgDuplicate: View
+    private lateinit var mImgPalette: View
     private val mEditingToolsAdapter = EditingToolsAdapter(this)
     private val mFilterViewAdapter = FilterViewAdapter(this)
     private lateinit var mRootView: ConstraintLayout
@@ -213,6 +214,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
 
         mImgDelete.isEnabled =  mPhotoEditor.isAnyViewSelected()
         mImgDuplicate.isEnabled =  mPhotoEditor.isAnyViewSelected()
+        mImgPalette.isEnabled =  mPhotoEditor.isAnyViewSelected()
     }
 
     private fun handleIntentImage(source: ImageView) {
@@ -265,6 +267,10 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         mImgDuplicate = findViewById(R.id.imgDuplicate)
         mImgDuplicate.setOnClickListener(this)
         mImgDuplicate.isEnabled = false
+
+        mImgPalette = findViewById(R.id.imgPalette)
+        mImgPalette.setOnClickListener(this)
+        mImgPalette.isEnabled = false
 
         val imgCamera: ImageView = findViewById(R.id.imgCamera)
         imgCamera.setOnClickListener(this)
@@ -394,6 +400,9 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
 
             R.id.imgDuplicate -> {
                 mPhotoEditor.duplicateSelectedView()
+                updateActionButtonsState()
+            }
+            R.id.imgPalette -> {
                 updateActionButtonsState()
             }
 
@@ -599,10 +608,8 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     override fun onToolSelected(toolType: ToolType) {
 
         if (toolType != ToolType.SHAPE) {
-            Log.d("DrawingView", "ga masuk sini")
-            (mPhotoEditor as PhotoEditorImpl).exitAllDrawingModes() // Buat method baru ini
+            (mPhotoEditor as PhotoEditorImpl).exitAllDrawingModes()
         } else{
-            Log.d("DrawingView", "malah masuk sini")
             (mPhotoEditor as PhotoEditorImpl).enterShapeCreatingMode()
         }
 
