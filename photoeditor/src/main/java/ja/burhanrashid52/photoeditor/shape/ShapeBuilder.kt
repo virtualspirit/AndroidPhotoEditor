@@ -2,6 +2,7 @@ package ja.burhanrashid52.photoeditor.shape
 
 import android.graphics.Color
 import androidx.annotation.ColorInt
+import ja.burhanrashid52.photoediting.StrokeStyle
 
 /**
  *
@@ -15,6 +16,9 @@ class ShapeBuilder {
         private set
 
     var shapeSize: Float = DEFAULT_SHAPE_SIZE
+        private set
+
+    var shapeStyle: StrokeStyle = StrokeStyle.SOLID
         private set
 
     @androidx.annotation.IntRange(from = 0, to = 255)
@@ -33,6 +37,11 @@ class ShapeBuilder {
 
     fun withShapeSize(size: Float): ShapeBuilder {
         shapeSize = size
+        return this
+    }
+
+    fun withStrokeStyle(style: StrokeStyle): ShapeBuilder {
+        shapeStyle = style
         return this
     }
 

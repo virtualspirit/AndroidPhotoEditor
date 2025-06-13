@@ -195,73 +195,67 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
     }
 
     override fun duplicateSelectedView(): Boolean {
-        val originalView = viewState.currentSelectedView ?: return false
-        val tagData = originalView.tag as? Pair<*, *>
-        val originalGraphic = tagData?.second as? Graphic
-
-        Log.d("DUPLICATE_DEBUG", "Attempting to duplicate a graphic of type: ${originalGraphic?.javaClass?.simpleName}")
-
-        if (originalGraphic == null) {
-            Log.e("DUPLICATE_DEBUG", "Could not get original graphic from tag.")
-            return false
+        val currentView = viewState.currentSelectedView
+        val viewType = if (currentView?.tag is ViewType) {
+            currentView.tag as ViewType
+        } else if (currentView?.tag is Pair<*, *>) {
+            (currentView.tag as Pair<*, *>).first as? ViewType
+        } else {
+            null
         }
 
-        val originalTransform = ViewTransform.from(originalView)
+        if (viewType == ViewType.BRUSH_DRAWING) {
+            val originalShapeView = currentView?.findViewById<ShapeView>(R.id.shape_view)
 
-        val newGraphic: Graphic? = when (originalGraphic) {
-            is Text -> {
-                val originalTextView = originalView.findViewById<TextView>(R.id.tvPhotoEditorText)
-                val text = originalTextView.text.toString()
-                val styleBuilder = TextStyleBuilder().apply {
+            if (originalShapeView != null) {
+                val color = originalShapeView.getCurrentColor()
+                val strokeWidth = originalShapeView.getCurrentStrokeWidth()
+                val strokeStyle = originalShapeView.getCurrentStrokeStyle()
+                val path = originalShapeView.getPath()
+
+                if (path == null) false
+
+                val newBuilder = ShapeBuilder()
+                    .withShapeColor(color)
+                    .withShapeSize(strokeWidth)
+                    .withStrokeStyle(strokeStyle)
+
+                val multiTouchListener = getMultiTouchListener(true)
+                val duplicatedGraphic = Shape(photoEditorView, multiTouchListener, viewState, mGraphicManager)
+
+                if (path != null) {
+                    duplicatedGraphic.buildView(newBuilder, path)
+                }
+
+                val originalParams = currentView?.layoutParams as RelativeLayout.LayoutParams
+                val duplicatedParams = RelativeLayout.LayoutParams(originalParams.width, originalParams.height)
+
+                val offset = 25
+                duplicatedParams.leftMargin = originalParams.leftMargin + offset
+                duplicatedParams.topMargin = originalParams.topMargin + offset
+
+                duplicatedGraphic.rootView.layoutParams = duplicatedParams
+
+                addToEditor(duplicatedGraphic)
+            }
+        } else if (viewType === ViewType.TEXT) {
+            val originalTextView = currentView?.findViewById<TextView>(R.id.tvPhotoEditorText)
+            val text = originalTextView?.text.toString()
+            val styleBuilder = TextStyleBuilder().apply {
+                if (originalTextView != null) {
                     withTextColor(originalTextView.currentTextColor)
+                }
 
+                if (originalTextView != null) {
                     originalTextView.typeface?.let {
                         withTextFont(it)
                     }
                 }
-                addText(text, styleBuilder)
             }
-            is Sticker -> {
-                (originalView.findViewById<ImageView>(R.id.imgPhotoEditorImage).drawable as? BitmapDrawable)?.bitmap?.let { addImage(it) }
-            }
-            is Shape -> {
-                Log.d("DUPLICATE_DEBUG", "Graphic is a Shape. Checking recipe...")
-                val recipe = originalGraphic.getRecipe()
-                if (recipe == null) {
-                    Log.e("DUPLICATE_DEBUG", "RECIPE IS NULL! Cannot duplicate shape.")
-                    null
-                }
-
-                originalGraphic.getRecipe()?.let { recipe ->
-                    addShape(recipe.shapeBuilder, recipe.path)
-                }
-            }
-            else -> {
-                Log.e("DUPLICATE_DEBUG", "Unhandled graphic type.")
-                null
-            }
+            addText(text, styleBuilder)
+        }  else if (viewType === ViewType.IMAGE) {
+            (currentView?.findViewById<ImageView>(R.id.imgPhotoEditorImage)?.drawable as? BitmapDrawable)?.bitmap?.let { addImage(it) }
         }
-
-        if (newGraphic == null) {
-            Log.e("DUPLICATE_ERROR", "New graphic creation returned null.")
-            return false
-        }
-
-        val newView = newGraphic.rootView
-
-        if (newView == originalView) {
-            Log.e("DUPLICATE_ERROR", "New view is the same as the original view. Aborting.")
-            return false
-        }
-
-        originalTransform.applyTo(newView)
-
-        val offset = 30f
-        newView.translationX += offset
-        newView.translationY += offset
-
-        val finalTransform = ViewTransform.from(newView)
-        onTransform(newView, originalTransform, finalTransform)
 
         return true
     }
@@ -376,7 +370,6 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
         val viewType = if (currentView.tag is ViewType) {
             currentView.tag as ViewType
         } else if (currentView.tag is Pair<*, *>) {
-            // Jika tag adalah Pair (seperti yang ditunjukkan log), ambil elemen pertamanya
             (currentView.tag as Pair<*, *>).first as? ViewType
         } else {
             null
