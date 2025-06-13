@@ -3,6 +3,9 @@ package ja.burhanrashid52.photoeditor
 import android.view.View
 import android.view.ViewGroup
 import android.widget.RelativeLayout
+import android.widget.TextView
+import ja.burhanrashid52.photoediting.StrokeStyle
+import ja.burhanrashid52.photoeditor.shape.ShapeView
 
 /**
  * Created by Burhanuddin Rashid on 15/05/21.
@@ -31,17 +34,15 @@ class GraphicManager(
             (params as RelativeLayout.LayoutParams).addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
         }
 
-        mPhotoEditorView.addView(view, params) // Gunakan params yang sudah diperiksa
+        mPhotoEditorView.addView(view, params)
         mViewState.addAddedView(view)
 
 //        if (redoStackCount > 0) {
 //            mViewState.clearRedoViews()
 //        }
 
-        // Simpan aksi "ADD" ke tumpukan undo
         mViewState.pushUndoAction(EditorAction(view, ActionType.ADD))
 
-        // Setiap ada aksi baru, tumpukan redo harus bersih
         if (mViewState.redoActionsCount > 0) {
             mViewState.clearRedoActions()
         }
@@ -96,15 +97,31 @@ class GraphicManager(
                 val view = lastAction.view
                 mPhotoEditorView.addView(view)
                 mViewState.addAddedView(view)
-                mViewState.currentSelectedView = view // Tetap set currentSelectedView
+                mViewState.currentSelectedView = view
 
-                // Panggil listener data, BUKAN listener UI
                 (view.tag as? ViewType)?.let {
                     onPhotoEditorListener?.onAddViewListener(it, mViewState.addedViewsCount)
                 }
             }
             ActionType.TRANSFORM -> {
                 lastAction.oldTransform?.applyTo(lastAction.view)
+            }
+            ActionType.CHANGE_COLOR -> {
+                val view = lastAction.view
+                val colorToApply = lastAction.oldColor
+                if (colorToApply != null) {
+                    applyColorToView(view, colorToApply)
+                }
+            }
+            ActionType.CHANGE_STROKE -> {
+                val view = lastAction.view
+                val widthToApply = lastAction.oldStrokeWidth
+                if (widthToApply != null) {
+                    applyStrokeWidthToView(view, widthToApply)
+                }
+            }
+            ActionType.CHANGE_STROKE_STYLE -> {
+                applyStrokeStyleToView(lastAction.view, lastAction.oldStrokeStyle as StrokeStyle)
             }
         }
 
@@ -142,13 +159,50 @@ class GraphicManager(
                 }
             }
             ActionType.TRANSFORM -> {
-                // Untuk me-redo TRANSFORM, terapkan state BARU
                 lastRedoAction.newTransform?.applyTo(lastRedoAction.view)
+            }
+
+            ActionType.CHANGE_COLOR -> {
+                val view = lastRedoAction.view
+                val colorToApply = lastRedoAction.newColor
+                if (colorToApply != null) {
+                    applyColorToView(view, colorToApply)
+                }
+            }
+            ActionType.CHANGE_STROKE -> {
+                val view = lastRedoAction.view
+                val widthToApply = lastRedoAction.newStrokeWidth
+                if (widthToApply != null) {
+                    applyStrokeWidthToView(view, widthToApply)
+                }
+            }
+            ActionType.CHANGE_STROKE_STYLE -> {
+                applyStrokeStyleToView(lastRedoAction.view, lastRedoAction.newStrokeStyle as StrokeStyle)
             }
         }
 
         mViewState.pushUndoAction(lastRedoAction)
         return mViewState.redoActionsCount > 0
+    }
+
+    private fun applyColorToView(view: View, color: Int) {
+        val viewType = if (view.tag is ViewType) {
+            view.tag as ViewType
+        } else if (view.tag is Pair<*, *>) {
+            (view.tag as Pair<*, *>).first as? ViewType
+        } else {
+            null
+        }
+
+        when (viewType) {
+            ViewType.TEXT -> {
+                view.findViewById<TextView>(R.id.tvPhotoEditorText)?.setTextColor(color)
+            }
+            ViewType.BRUSH_DRAWING -> {
+                view.findViewById<ShapeView>(R.id.shape_view)?.updateColor(color)
+            }
+            else -> {}
+        }
     }
 
     fun pushTransformAction(view: View, oldTransform: ViewTransform, newTransform: ViewTransform) {
@@ -157,5 +211,20 @@ class GraphicManager(
         if (mViewState.redoActionsCount > 0) {
             mViewState.clearRedoActions()
         }
+    }
+
+    fun pushUndoAction(action: EditorAction) {
+        mViewState.pushUndoAction(action)
+        if (mViewState.redoActionsCount > 0) {
+            mViewState.clearRedoActions()
+        }
+    }
+
+    private fun applyStrokeWidthToView(view: View, width: Float) {
+        view.findViewById<ShapeView>(R.id.shape_view)?.updateStrokeWidth(width)
+    }
+
+    private fun applyStrokeStyleToView(view: View, style: StrokeStyle) {
+        view.findViewById<ShapeView>(R.id.shape_view)?.updateStrokeStyle(style)
     }
 }

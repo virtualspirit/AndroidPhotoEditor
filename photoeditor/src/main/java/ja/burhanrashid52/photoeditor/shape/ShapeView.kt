@@ -85,10 +85,13 @@ package ja.burhanrashid52.photoeditor.shape
 
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.DashPathEffect
 import android.graphics.Paint
 import android.graphics.Path
 import android.util.AttributeSet
+import android.util.Log
 import android.view.View
+import ja.burhanrashid52.photoediting.StrokeStyle
 
 class ShapeView @JvmOverloads constructor(
     context: Context,
@@ -99,9 +102,9 @@ class ShapeView @JvmOverloads constructor(
     private val paint = Paint()
     private var shapePath: Path? = null
 
+    private var currentStyle: StrokeStyle = StrokeStyle.SOLID
+
     init {
-        // PENTING: Matikan hardware acceleration untuk View ini
-        // agar stroke/goresan tidak terlihat "kotak" saat di-scale.
         setLayerType(LAYER_TYPE_SOFTWARE, null)
     }
 
@@ -123,14 +126,52 @@ class ShapeView @JvmOverloads constructor(
             paint.color = this.shapeColor
             this.shapeOpacity?.let { paint.alpha = it }
         }
+
+        applyPathEffect()
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        // Cukup gambar path yang sudah diberikan.
-        // PhotoEditorView (parent) akan menangani posisi dan skala.
         shapePath?.let {
+            Log.e("wew", "ShapeView.onDraw is executing. Drawing path with paint color: ${paint.color}")
             canvas.drawPath(it, paint)
+        }
+    }
+
+    fun updateColor(newColor: Int) {
+        Log.e("wew", "ShapeView.updateColor called. Old paint color: ${paint.color}, New color: $newColor")
+        paint.color = newColor
+        invalidate()
+    }
+
+    fun getCurrentColor(): Int {
+        return paint.color
+    }
+
+    fun updateStrokeWidth(newWidth: Float) {
+        paint.strokeWidth = newWidth
+        invalidate()
+    }
+
+    fun getCurrentStrokeWidth(): Float {
+        return paint.strokeWidth
+    }
+
+    fun updateStrokeStyle(newStyle: StrokeStyle) {
+        currentStyle = newStyle
+        applyPathEffect()
+        invalidate()
+    }
+
+    fun getCurrentStrokeStyle(): StrokeStyle {
+        return currentStyle
+    }
+
+    private fun applyPathEffect() {
+        paint.pathEffect = when (currentStyle) {
+            StrokeStyle.DASHED -> DashPathEffect(floatArrayOf(30f, 20f), 0f) // interval on, off
+            StrokeStyle.DOTTED -> DashPathEffect(floatArrayOf(5f, 15f), 0f)  // interval on, off
+            StrokeStyle.SOLID -> null // Hapus efek
         }
     }
 }

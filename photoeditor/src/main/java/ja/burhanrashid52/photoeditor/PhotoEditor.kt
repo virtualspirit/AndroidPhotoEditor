@@ -10,6 +10,7 @@ import android.widget.ImageView
 import androidx.annotation.IntRange
 import androidx.annotation.RequiresPermission
 import androidx.annotation.UiThread
+import ja.burhanrashid52.photoediting.StrokeStyle
 import ja.burhanrashid52.photoeditor.shape.ShapeBuilder
 
 /**
@@ -358,6 +359,18 @@ interface PhotoEditor {
      * through the use of a ShapeBuilder.
      */
     fun setShape(shapeBuilder: ShapeBuilder) // endregion
+
+    /**
+     * Changes the color of the currently selected view.
+     * Works for both Text and Shapes.
+     * @param newColor The new color code.
+     */
+    fun changeSelectedViewColor(newColor: Int)
+    fun changeSelectedViewStrokeWidth(newWidth: Float)
+    fun getSelectedViewStrokeWidth(): Float?
+    fun changeSelectedViewStrokeStyle(newStyle: StrokeStyle)
+    fun getSelectedViewStrokeStyle(): StrokeStyle?
+
 
     fun deleteSelectedView(): Boolean
     fun isAnyViewSelected(): Boolean

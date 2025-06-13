@@ -214,7 +214,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
 
         mImgDelete.isEnabled =  mPhotoEditor.isAnyViewSelected()
         mImgDuplicate.isEnabled =  mPhotoEditor.isAnyViewSelected()
-        mImgPalette.isEnabled =  mPhotoEditor.isAnyViewSelected()
+//        mImgPalette.isEnabled =  mPhotoEditor.isAnyViewSelected()
     }
 
     private fun handleIntentImage(source: ImageView) {
@@ -366,6 +366,11 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         Log.d(TAG, "onStartViewChangeListener() called with: viewType = [$viewType]")
         mImgDelete.isEnabled = true
 
+        if (viewType == ViewType.BRUSH_DRAWING) {
+            mImgPalette.isEnabled = true
+        } else {
+            mImgPalette.isEnabled = false
+        }
     }
 
     override fun onStopViewChangeListener(viewType: ViewType) {
@@ -403,7 +408,22 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
                 updateActionButtonsState()
             }
             R.id.imgPalette -> {
-                updateActionButtonsState()
+                val currentStroke = mPhotoEditor.getSelectedViewStrokeWidth()
+                    ?: TopPaletteDialogFragment.STROKE_MEDIUM
+                val currentStyle = mPhotoEditor.getSelectedViewStrokeStyle()
+                    ?: StrokeStyle.SOLID
+
+                val topSheet = TopPaletteDialogFragment.newInstance(currentStroke, currentStyle)
+                topSheet.setOnColorSelectListener { color ->
+                    mPhotoEditor.changeSelectedViewColor(color)
+                }
+                topSheet.setOnStrokeWidthSelectListener { width ->
+                    mPhotoEditor.changeSelectedViewStrokeWidth(width)
+                }
+                topSheet.setOnStrokeStyleSelectListener { style ->
+                    mPhotoEditor.changeSelectedViewStrokeStyle(style)
+                }
+                topSheet.show(supportFragmentManager, "ColorPickerTopSheet")
             }
 
             R.id.btnDone -> saveImage()
@@ -733,6 +753,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
 
     fun hideDeleteButton() {
         mImgDelete.isEnabled = false
+        mImgPalette.isEnabled = false
     }
 
     companion object {

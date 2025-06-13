@@ -74,7 +74,7 @@
         android:padding="8dp"
         android:src="@drawable/palette"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/imgRemove" />
+        app:layout_constraintEnd_toStartOf="@+id/imgDuplicate" />
 
     <ImageView
         android:id="@+id/imgGallery"

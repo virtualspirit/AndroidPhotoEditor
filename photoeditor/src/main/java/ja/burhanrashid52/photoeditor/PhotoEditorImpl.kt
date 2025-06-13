@@ -19,9 +19,11 @@ import android.widget.TextView
 import androidx.annotation.IntRange
 import androidx.annotation.RequiresPermission
 import ja.burhanrashid52.photoediting.EditImageActivity
+import ja.burhanrashid52.photoediting.StrokeStyle
 import ja.burhanrashid52.photoeditor.PhotoEditorImageViewListener.OnSingleTapUpCallback
 import ja.burhanrashid52.photoeditor.shape.AbstractShape
 import ja.burhanrashid52.photoeditor.shape.ShapeBuilder
+import ja.burhanrashid52.photoeditor.shape.ShapeView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -361,6 +363,122 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
     override fun setShape(shapeBuilder: ShapeBuilder) {
         drawingView.currentShapeBuilder = shapeBuilder
     } // endregion
+
+    override fun changeSelectedViewColor(newColor: Int) {
+        Log.e("wew", "PhotoEditor.changeSelectedViewColor called with color: $newColor")
+        val currentView = viewState.currentSelectedView
+        if (currentView == null) {
+            Log.e("wew", "Cannot change color, currentSelectedView is null!")
+            return
+        }
+        Log.e("wew", "currentSelectedView is: ${currentView.javaClass.simpleName}, tag: ${currentView.tag}")
+
+        val viewType = if (currentView.tag is ViewType) {
+            currentView.tag as ViewType
+        } else if (currentView.tag is Pair<*, *>) {
+            // Jika tag adalah Pair (seperti yang ditunjukkan log), ambil elemen pertamanya
+            (currentView.tag as Pair<*, *>).first as? ViewType
+        } else {
+            null
+        }
+
+        Log.e("wew", "Detected ViewType: $viewType")
+        var oldColor: Int? = null
+
+        when (viewType) {
+            ViewType.TEXT -> {
+                val textView = currentView.findViewById<TextView>(R.id.tvPhotoEditorText)
+                oldColor = textView?.currentTextColor
+                textView?.setTextColor(newColor)
+            }
+            ViewType.BRUSH_DRAWING -> {
+                Log.e("wew", "Applying color to SHAPE view (BRUSH_DRAWING).")
+                val shapeView = currentView.findViewById<ShapeView>(R.id.shape_view)
+                oldColor = shapeView?.getCurrentColor()
+
+                if (shapeView != null) {
+                    shapeView.updateColor(newColor)
+                    Log.e("wew", "shapeView.updateColor() called.")
+                } else {
+                    Log.e("wew", "shapeView is NULL inside the selected view!")
+                }
+            }
+            else -> {
+                Log.e("wew", "Selected view is not of a type that can change color. Type: ${currentView.tag}")
+            }
+        }
+
+        if (oldColor != null && oldColor != newColor) {
+            val action = EditorAction(
+                view = currentView,
+                actionType = ActionType.CHANGE_COLOR,
+                oldColor = oldColor,
+                newColor = newColor
+            )
+            mGraphicManager.pushUndoAction(action)
+        }
+    }
+
+    override fun changeSelectedViewStrokeWidth(newWidth: Float) {
+        val currentView = viewState.currentSelectedView ?: return
+
+        if (currentView.tag is ViewType && currentView.tag == ViewType.BRUSH_DRAWING ||
+            currentView.tag is Pair<*, *> && (currentView.tag as Pair<*, *>).first == ViewType.BRUSH_DRAWING) {
+            val shapeView = currentView.findViewById<ja.burhanrashid52.photoeditor.shape.ShapeView>(R.id.shape_view)
+            if (shapeView != null) {
+                val oldWidth = shapeView.getCurrentStrokeWidth()
+
+                if (oldWidth != newWidth) {
+                    val action = EditorAction(
+                        view = currentView,
+                        actionType = ActionType.CHANGE_STROKE,
+                        oldStrokeWidth = oldWidth,
+                        newStrokeWidth = newWidth
+                    )
+                    mGraphicManager.pushUndoAction(action)
+                }
+
+                shapeView.updateStrokeWidth(newWidth)
+            }
+        }
+    }
+
+    override fun getSelectedViewStrokeWidth(): Float? {
+        val currentView = viewState.currentSelectedView ?: return null
+        if (currentView.tag is ViewType && currentView.tag == ViewType.BRUSH_DRAWING ||
+            currentView.tag is Pair<*, *> && (currentView.tag as Pair<*, *>).first == ViewType.BRUSH_DRAWING) {
+                val shapeView = currentView.findViewById<ShapeView>(R.id.shape_view)
+                return shapeView?.getCurrentStrokeWidth()
+            }
+        return null
+    }
+
+    override fun changeSelectedViewStrokeStyle(newStyle: StrokeStyle) {
+        val currentView = viewState.currentSelectedView ?: return
+
+        if (currentView.tag is ViewType && currentView.tag == ViewType.BRUSH_DRAWING ||
+            currentView.tag is Pair<*, *> && (currentView.tag as Pair<*, *>).first == ViewType.BRUSH_DRAWING) {
+            val shapeView = currentView.findViewById<ShapeView>(R.id.shape_view)
+            if (shapeView != null) {
+                val oldStyle = shapeView.getCurrentStrokeStyle()
+                if (oldStyle != newStyle) {
+                    val action = EditorAction(view = currentView, actionType = ActionType.CHANGE_STROKE_STYLE, oldStrokeStyle =  oldStyle, newStrokeStyle =  newStyle)
+                    mGraphicManager.pushUndoAction(action)
+                }
+                shapeView.updateStrokeStyle(newStyle)
+            }
+        }
+    }
+
+    override fun getSelectedViewStrokeStyle(): StrokeStyle? {
+        val currentView = viewState.currentSelectedView ?: return null
+        if (currentView.tag is ViewType && currentView.tag == ViewType.BRUSH_DRAWING ||
+            currentView.tag is Pair<*, *> && (currentView.tag as Pair<*, *>).first == ViewType.BRUSH_DRAWING) {
+            val shapeView = currentView.findViewById<ShapeView>(R.id.shape_view)
+            return shapeView?.getCurrentStrokeStyle()
+        }
+        return null
+    }
 
     override fun onViewAdd(drawingView: DrawingView) {
         mOnPhotoEditorListener?.onAddViewListener(ViewType.BRUSH_DRAWING, viewState.addedViewsCount)
