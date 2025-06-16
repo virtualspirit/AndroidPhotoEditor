@@ -33,36 +33,111 @@
 
     <EditText
         android:id="@+id/add_text_edit_text"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="@dimen/normal_margin"
+        android:paddingHorizontal="@dimen/normal_margin"
         android:background="@null"
         android:colorControlActivated="#FFFFFF"
         android:colorControlNormal="#FFFFFF"
-        android:gravity="center"
         android:inputType="textMultiLine"
-        android:singleLine="true"
         android:textColorPrimary="#FFFFFF"
         android:textSize="40sp"
         android:focusedByDefault="true"
         android:focusable="true"
         android:focusableInTouchMode="true"
-        app:layout_constraintBottom_toTopOf="@+id/add_text_color_picker_recycler_view"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_margin="@dimen/normal_margin"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/add_text_btnDone"
         tools:visibility="visible" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/add_text_color_picker_recycler_view"
-        android:layout_width="0dp"
+<!--    <androidx.recyclerview.widget.RecyclerView-->
+<!--        android:id="@+id/add_text_color_picker_recycler_view"-->
+<!--        android:layout_width="0dp"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:orientation="horizontal"-->
+<!--        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"-->
+<!--        app:layout_constraintBottom_toBottomOf="parent"-->
+<!--        app:layout_constraintEnd_toEndOf="parent"-->
+<!--        app:layout_constraintStart_toStartOf="parent"-->
+<!--        tools:background="@android:color/black"-->
+<!--        tools:layout_height="wrap_content"-->
+<!--        tools:listitem="@layout/color_picker_item_list" />-->
+
+    <LinearLayout
+        android:id="@+id/option_bottom"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        tools:background="@android:color/black"
-        tools:layout_height="wrap_content"
-        tools:listitem="@layout/color_picker_item_list" />
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Text Color"
+            android:textColor="@color/white"
+            android:layout_marginBottom="4dp"/>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/add_text_color_picker_recycler_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            tools:listitem="@layout/color_picker_item_list"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Background Color"
+            android:textColor="@color/white"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="4dp"/>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/add_text_background_color_picker_recycler_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            tools:listitem="@layout/color_picker_item_list"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Text Size"
+            android:textColor="@color/white"
+            android:layout_marginBottom="4dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <SeekBar
+                android:id="@+id/sb_font_size"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:progress="24"
+                android:max="60"
+                android:layout_weight="1"
+                android:progressDrawable="@drawable/seekbar_progress_blue"
+                android:thumb="@drawable/seekbar_thumb_blue"
+                android:splitTrack="false"/>
+            <TextView
+                android:id="@+id/tv_tooltip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:textColor="@android:color/white"
+                android:textSize="14sp"
+                android:text="36" />
+        </LinearLayout>
+
+
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

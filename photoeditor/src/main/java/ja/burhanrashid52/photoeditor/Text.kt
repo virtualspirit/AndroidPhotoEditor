@@ -1,6 +1,8 @@
 package ja.burhanrashid52.photoeditor
 
+import android.graphics.Color
 import android.graphics.Typeface
+import android.graphics.drawable.ColorDrawable
 import android.view.Gravity
 import android.view.View
 import android.widget.TextView
@@ -33,7 +35,30 @@ class Text(
     }
 
     private fun setupGesture() {
-        val onGestureControl = buildGestureController(mPhotoEditorView, mViewState)
+
+        val onGestureControl = object : MultiTouchListener.OnGestureControl {
+            override fun onClick() {
+                val boxHelper = BoxHelper(mPhotoEditorView, mViewState)
+                boxHelper.clearHelperBox()
+                toggleSelection()
+                mViewState.currentSelectedView = rootView
+
+                val textInput = mTextView?.text.toString()
+                val currentTextColor = mTextView?.currentTextColor ?: 0
+                val currentBackgroundColor = (mTextView?.background as? ColorDrawable)?.color ?: Color.TRANSPARENT
+
+                mGraphicManager.onPhotoEditorListener?.onEditTextChangeListener(
+                    rootView,
+                    textInput,
+                    currentTextColor,
+                    currentBackgroundColor
+                )
+            }
+
+            override fun onLongClick() {
+            }
+        }
+
         mMultiTouchListener.setOnGestureControl(onGestureControl)
         val rootView = rootView
         rootView.setOnTouchListener(mMultiTouchListener)
@@ -47,14 +72,7 @@ class Text(
         }
     }
 
-    override fun updateView(view: View) {
-        val textInput = mTextView?.text.toString()
-        val currentTextColor = mTextView?.currentTextColor ?: 0
-        val photoEditorListener = mGraphicManager.onPhotoEditorListener
-        photoEditorListener?.onEditTextChangeListener(view, textInput, currentTextColor)
+    init {
+        setupGesture()
     }
-
-//    init {
-//        setupGesture()
-//    }
 }

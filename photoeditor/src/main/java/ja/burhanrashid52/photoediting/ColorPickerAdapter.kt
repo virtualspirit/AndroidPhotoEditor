@@ -25,7 +25,15 @@ class ColorPickerAdapter internal constructor(
 
     private var selectedPosition: Int = RecyclerView.NO_POSITION
 
-    internal constructor(context: Context) : this(context, getDefaultColors(context)) {
+    internal constructor(context: Context) : this(context, getDefaultColors(context, false)) {
+        this.context = context
+        inflater = LayoutInflater.from(context)
+    }
+
+    internal constructor(context: Context, addTransparent: Boolean = false) : this(
+        context,
+        getDefaultColors(context, addTransparent)
+    ) {
         this.context = context
         inflater = LayoutInflater.from(context)
     }
@@ -75,8 +83,11 @@ class ColorPickerAdapter internal constructor(
     }
 
     companion object {
-        fun getDefaultColors(context: Context): List<Int> {
+        fun getDefaultColors(context: Context, addTransparent: Boolean): List<Int> {
             val colorPickerColors = ArrayList<Int>()
+            if (addTransparent) {
+                colorPickerColors.add(Color.TRANSPARENT)
+            }
             colorPickerColors.add(ContextCompat.getColor((context), R.color.white))
             colorPickerColors.add(ContextCompat.getColor((context), R.color.black))
             colorPickerColors.add(ContextCompat.getColor((context), R.color.red_color_picker))

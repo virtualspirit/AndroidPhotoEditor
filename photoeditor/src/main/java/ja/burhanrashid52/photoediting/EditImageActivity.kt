@@ -6,8 +6,10 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
@@ -330,14 +332,18 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         }
     }
 
-    override fun onEditTextChangeListener(rootView: View, text: String, colorCode: Int) {
-        val textEditorDialogFragment =
-            TextEditorDialogFragment.show(this, text.toString(), colorCode)
+    override fun onEditTextChangeListener(rootView: View, text: String, colorCode: Int, backgroundColor: Int) {
+        val textView = rootView.findViewById<TextView>(R.id.tvPhotoEditorText)
+        val currentTextSize = textView.textSize / resources.displayMetrics.scaledDensity
+
+        val textEditorDialogFragment = TextEditorDialogFragment.show(this, text, colorCode, backgroundColor, currentTextSize)
         textEditorDialogFragment.setOnTextEditorListener(object :
             TextEditorDialogFragment.TextEditorListener {
-            override fun onDone(inputText: String, colorCode: Int) {
+            override fun onDone(inputText: String, textColor: Int, backgroundColor: Int, textSize: Float) {
                 val styleBuilder = TextStyleBuilder()
-                styleBuilder.withTextColor(colorCode)
+                styleBuilder.withTextColor(textColor)
+                styleBuilder.withBackgroundColor(backgroundColor)
+                styleBuilder.withTextSize(textSize)
                 mPhotoEditor.editText(rootView, inputText, styleBuilder)
                 mTxtCurrentTool.setText(R.string.label_text)
             }
@@ -644,9 +650,12 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
                 val textEditorDialogFragment = TextEditorDialogFragment.show(this)
                 textEditorDialogFragment.setOnTextEditorListener(object :
                     TextEditorDialogFragment.TextEditorListener {
-                    override fun onDone(inputText: String, colorCode: Int) {
+                    // Update signature onDone
+                    override fun onDone(inputText: String, textColor: Int, backgroundColor: Int, textSize: Float) {
                         val styleBuilder = TextStyleBuilder()
-                        styleBuilder.withTextColor(colorCode)
+                        styleBuilder.withTextColor(textColor)
+                        styleBuilder.withBackgroundColor(backgroundColor)
+                        styleBuilder.withTextSize(textSize)
                         mPhotoEditor.addText(inputText, styleBuilder)
                         mTxtCurrentTool.setText(R.string.label_text)
                     }

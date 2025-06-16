@@ -123,6 +123,10 @@ class GraphicManager(
             ActionType.CHANGE_STROKE_STYLE -> {
                 applyStrokeStyleToView(lastAction.view, lastAction.oldStrokeStyle as StrokeStyle)
             }
+            ActionType.CHANGE_TEXT -> {
+                val textView = lastAction.view.findViewById<TextView>(R.id.tvPhotoEditorText)
+                lastAction.oldTextStyle?.applyStyle(textView)
+            }
         }
 
         mViewState.pushRedoAction(lastAction)
@@ -178,6 +182,10 @@ class GraphicManager(
             }
             ActionType.CHANGE_STROKE_STYLE -> {
                 applyStrokeStyleToView(lastRedoAction.view, lastRedoAction.newStrokeStyle as StrokeStyle)
+            }
+            ActionType.CHANGE_TEXT -> {
+                val textView = lastRedoAction.view.findViewById<TextView>(R.id.tvPhotoEditorText)
+                lastRedoAction.newTextStyle?.applyStyle(textView)
             }
         }
 

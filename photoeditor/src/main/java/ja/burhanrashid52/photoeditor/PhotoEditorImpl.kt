@@ -9,6 +9,7 @@ import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.ColorDrawable
 import android.text.TextUtils
 import android.util.Log
 import android.view.GestureDetector
@@ -21,6 +22,7 @@ import androidx.annotation.RequiresPermission
 import ja.burhanrashid52.photoediting.EditImageActivity
 import ja.burhanrashid52.photoediting.StrokeStyle
 import ja.burhanrashid52.photoeditor.PhotoEditorImageViewListener.OnSingleTapUpCallback
+import ja.burhanrashid52.photoeditor.TextStyleBuilder.TextStyle
 import ja.burhanrashid52.photoeditor.shape.AbstractShape
 import ja.burhanrashid52.photoeditor.shape.ShapeBuilder
 import ja.burhanrashid52.photoeditor.shape.ShapeView
@@ -113,6 +115,22 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
                 inputText
             )
         ) {
+
+            val oldStateBuilder = TextStyleBuilder()
+            oldStateBuilder.values[TextStyle.TEXT] = inputTextView.text
+            val oldTextSizeInSp = inputTextView.textSize / context.resources.displayMetrics.scaledDensity
+            oldStateBuilder.withTextSize(oldTextSizeInSp)
+            oldStateBuilder.withTextColor(inputTextView.currentTextColor)
+            (inputTextView.background as? ColorDrawable)?.let {
+                oldStateBuilder.withBackgroundColor(it.color)
+            }
+
+            val newStateBuilder = styleBuilder ?: TextStyleBuilder()
+            newStateBuilder.values[TextStyle.TEXT] = inputText
+
+            val editAction = EditorAction(view, actionType = ActionType.CHANGE_TEXT, oldTextStyle = oldStateBuilder, newTextStyle = newStateBuilder)
+            mGraphicManager.pushUndoAction(editAction)
+
             inputTextView.text = inputText
             styleBuilder?.applyStyle(inputTextView)
             mGraphicManager.updateView(view)
@@ -244,6 +262,9 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
             val styleBuilder = TextStyleBuilder().apply {
                 if (originalTextView != null) {
                     withTextColor(originalTextView.currentTextColor)
+                    val cd = originalTextView.background as ColorDrawable
+                    val colorCode = cd.color
+                    withBackgroundColor(colorCode)
                 }
 
                 if (originalTextView != null) {

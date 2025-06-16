@@ -19,6 +19,10 @@ import java.util.*
 open class TextStyleBuilder {
     val values = mutableMapOf<TextStyle, Any>()
 
+    fun withTextContent(text: String) {
+        values[TextStyle.TEXT] = text
+    }
+
     /**
      * Set this textSize style
      *
@@ -120,6 +124,10 @@ open class TextStyleBuilder {
     fun applyStyle(textView: TextView) {
         for ((key, value) in values) {
             when (key) {
+                TextStyle.TEXT -> {
+                    val text = value as String
+                    textView.text = text
+                }
                 TextStyle.SIZE -> {
                     val size = value as Float
                     applyTextSize(textView, size)
@@ -178,7 +186,7 @@ open class TextStyleBuilder {
     }
 
     protected open fun applyTextSize(textView: TextView, size: Float) {
-        textView.textSize = size
+        textView.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, size)
     }
 
     protected fun applyTextShadow(
@@ -254,6 +262,7 @@ open class TextStyleBuilder {
      * Enum to maintain current supported style properties used on on [PhotoEditor.addText] and [PhotoEditor.editText]
      */
     enum class TextStyle(val property: String) {
+        TEXT("Text"),
         SIZE("TextSize"),
         COLOR("TextColor"),
         GRAVITY("Gravity"),
