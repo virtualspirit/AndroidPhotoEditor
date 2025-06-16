@@ -281,6 +281,15 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
         return true
     }
 
+    override fun addCropAction(oldBitmap: Bitmap, newBitmap: Bitmap) {
+        val action = EditorAction(
+            view = photoEditorView,
+            actionType = ActionType.CROP,
+            oldBitmap = oldBitmap,
+            newBitmap = newBitmap
+        )
+        mGraphicManager.pushUndoAction(action)
+    }
 
     override fun setBrushDrawingMode(brushDrawingMode: Boolean) {
         Log.d("DrawingView", "Entering Shape Creating Mode...")

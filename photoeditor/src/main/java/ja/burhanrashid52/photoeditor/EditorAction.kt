@@ -1,10 +1,11 @@
 package ja.burhanrashid52.photoeditor
 
+import android.graphics.Bitmap
 import android.view.View
 import ja.burhanrashid52.photoediting.StrokeStyle
 
 enum class ActionType {
-    ADD, DELETE, TRANSFORM, CHANGE_COLOR, CHANGE_STROKE, CHANGE_STROKE_STYLE, CHANGE_TEXT
+    ADD, DELETE, TRANSFORM, CHANGE_COLOR, CHANGE_STROKE, CHANGE_STROKE_STYLE, CHANGE_TEXT, CROP
 }
 
 data class EditorAction(
@@ -19,5 +20,7 @@ data class EditorAction(
     val oldStrokeStyle: StrokeStyle? = null,
     val newStrokeStyle: StrokeStyle? = null,
     val oldTextStyle: TextStyleBuilder? = null,
-    val newTextStyle: TextStyleBuilder? = null
+    val newTextStyle: TextStyleBuilder? = null,
+    val oldBitmap: Bitmap? = null,
+    val newBitmap: Bitmap? = null
 )

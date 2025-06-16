@@ -42,6 +42,7 @@ import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.yalantis.ucrop.UCrop
 import com.yalantis.ucrop.UCrop.*
 import ja.burhanrashid52.photoediting.EmojiBSFragment.EmojiListener
 import ja.burhanrashid52.photoediting.StickerBSFragment.StickerListener
@@ -96,6 +97,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     private var mIsFilterVisible = false
     private var isModule = true
     private var sourceUri: Uri? = null
+    private var bitmapBeforeCrop: Bitmap? = null
 
     @VisibleForTesting
     var mSaveImageUri: Uri? = null
@@ -346,7 +348,13 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
                 styleBuilder.withTextSize(textSize)
                 mPhotoEditor.editText(rootView, inputText, styleBuilder)
                 mTxtCurrentTool.setText(R.string.label_text)
+                mEditingToolsAdapter.selectTool(ToolType.POINTER)
             }
+
+            override fun onCancel() {
+                mEditingToolsAdapter.selectTool(ToolType.POINTER)
+            }
+
         })
     }
 
@@ -544,6 +552,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     //                     See https://developer.android.com/training/basics/intents/result
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        mEditingToolsAdapter.selectTool(ToolType.POINTER)
         if (resultCode == RESULT_OK) {
             Log.d("RESULT", resultCode.toString())
             Log.d("REQUEST", requestCode.toString())
@@ -553,16 +562,26 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
                     val photo = data?.extras?.get("data") as Bitmap?
                     mPhotoEditorView.source.setImageBitmap(photo)
                 }
+                REQUEST_CROP -> {
+                    val resultUri = data?.let { getOutput(it) }
+                    if (resultUri != null) {
+                        try {
+                            val newBitmap = MediaStore.Images.Media.getBitmap(contentResolver, resultUri)
 
-                69 -> try {
-                    val bitmap = MediaStore.Images.Media.getBitmap(
-                        contentResolver, sourceUri
-                    )
-                    mPhotoEditorView.source.setImageBitmap(bitmap)
-                } catch (e: IOException) {
-                    e.printStackTrace()
+                            val oldBitmap = bitmapBeforeCrop
+
+                            if (oldBitmap != null) {
+                                mPhotoEditor.addCropAction(oldBitmap, newBitmap)
+                            }
+
+                            mPhotoEditorView.source.setImageBitmap(newBitmap)
+                            mEditingToolsAdapter.selectTool(ToolType.POINTER)
+                        } catch (e: IOException) {
+                            e.printStackTrace()
+                            showSnackbar("Failed to load cropped image")
+                        }
+                    }
                 }
-
                 PICK_REQUEST -> try {
                     mPhotoEditor.clearAllViews()
                     val uri = data?.data
@@ -658,6 +677,11 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
                         styleBuilder.withTextSize(textSize)
                         mPhotoEditor.addText(inputText, styleBuilder)
                         mTxtCurrentTool.setText(R.string.label_text)
+                        mEditingToolsAdapter.selectTool(ToolType.POINTER)
+                    }
+
+                    override fun onCancel() {
+                        mEditingToolsAdapter.selectTool(ToolType.POINTER)
                     }
                 })
                 showFilter(false)
@@ -671,12 +695,14 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
             ToolType.EMOJI -> {
                 showBottomSheetDialogFragment(mEmojiBSFragment)
                 showFilter(false)
+
             }
             ToolType.STICKER -> {
                 showBottomSheetDialogFragment(mStickerBSFragment)
                 showFilter(false)
             }
             ToolType.CLIP -> {
+                bitmapBeforeCrop = (mPhotoEditorView.source.drawable as? BitmapDrawable)?.bitmap
                 sourceUri?.let {
                     val options =
                         Options()
@@ -684,7 +710,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
                     of(it, it)
                         .withMaxResultSize(2048, 2048)
                         .withOptions(options)
-                        .start(this)
+                        .start(this, UCrop.REQUEST_CROP)
                 };
                 showFilter(false)
             }

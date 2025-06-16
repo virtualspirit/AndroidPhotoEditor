@@ -371,10 +371,11 @@ interface PhotoEditor {
     fun changeSelectedViewStrokeStyle(newStyle: StrokeStyle)
     fun getSelectedViewStrokeStyle(): StrokeStyle?
 
-
     fun deleteSelectedView(): Boolean
     fun isAnyViewSelected(): Boolean
     fun onStopViewChangeListener(viewType: ViewType)
     fun duplicateSelectedView(): Boolean
+
+    fun addCropAction(oldBitmap: Bitmap, newBitmap: Bitmap)
 
 }

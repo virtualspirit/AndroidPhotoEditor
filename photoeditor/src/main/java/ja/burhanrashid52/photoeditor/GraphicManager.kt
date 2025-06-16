@@ -127,6 +127,10 @@ class GraphicManager(
                 val textView = lastAction.view.findViewById<TextView>(R.id.tvPhotoEditorText)
                 lastAction.oldTextStyle?.applyStyle(textView)
             }
+
+            ActionType.CROP -> lastAction.oldBitmap?.let {
+                mPhotoEditorView.source.setImageBitmap(it)
+            }
         }
 
         mViewState.pushRedoAction(lastAction)
@@ -186,6 +190,10 @@ class GraphicManager(
             ActionType.CHANGE_TEXT -> {
                 val textView = lastRedoAction.view.findViewById<TextView>(R.id.tvPhotoEditorText)
                 lastRedoAction.newTextStyle?.applyStyle(textView)
+            }
+
+            ActionType.CROP -> lastRedoAction.newBitmap?.let {
+                mPhotoEditorView.source.setImageBitmap(it)
             }
         }
 

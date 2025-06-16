@@ -43,6 +43,7 @@ class TextEditorDialogFragment : DialogFragment(), SeekBar.OnSeekBarChangeListen
 
     interface TextEditorListener {
         fun onDone(inputText: String, textColor: Int, backgroundColor: Int, textSize: Float)
+        fun onCancel()
     }
 
     override fun onStart() {
@@ -140,6 +141,8 @@ class TextEditorDialogFragment : DialogFragment(), SeekBar.OnSeekBarChangeListen
         mAddTextCancelBtn.setOnClickListener{ onClickListenerView ->
             mInputMethodManager.hideSoftInputFromWindow(onClickListenerView.windowToken, 0)
             dismiss()
+            val textEditorListener = mTextEditorListener
+            textEditorListener?.onCancel()
         }
     }
 
