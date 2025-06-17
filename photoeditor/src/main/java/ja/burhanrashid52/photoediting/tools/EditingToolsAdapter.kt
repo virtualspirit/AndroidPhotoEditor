@@ -2,6 +2,7 @@ package ja.burhanrashid52.photoediting.tools
 
 import android.app.Activity
 import android.content.Context
+import android.content.res.ColorStateList
 import android.graphics.PorterDuff.Mode
 import android.util.Log
 import android.view.LayoutInflater
@@ -10,8 +11,10 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import ja.burhanrashid52.photoeditor.R
+import ja.burhanrashid52.photoeditor.SaveFileResult
 import java.util.ArrayList
 
 /**
@@ -33,6 +36,7 @@ class EditingToolsAdapter(private val mOnItemSelected: OnItemSelected) :
 
     internal inner class ToolModel(
         val mToolIcon: Int,
+        val mToolIconSelected: Int,
         val mToolType: ToolType
     )
 
@@ -46,15 +50,12 @@ class EditingToolsAdapter(private val mOnItemSelected: OnItemSelected) :
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
 
         val item = mToolList[position]
-        holder.imgToolIcon.setImageResource(item.mToolIcon)
 
-        // Logika penyorotan baru
+
         if (position == currentPosition) {
-            // Tool yang sedang aktif
-            holder.imgToolIcon.imageTintList = AppCompatResources.getColorStateList(context, R.color.tool_highlight_color)
+            holder.imgToolIcon.setImageResource(item.mToolIconSelected)
         } else {
-            // Tool tidak aktif
-            holder.imgToolIcon.imageTintList = null
+            holder.imgToolIcon.setImageResource(item.mToolIcon)
         }
     }
 
@@ -85,13 +86,13 @@ class EditingToolsAdapter(private val mOnItemSelected: OnItemSelected) :
 
     fun addTool(tool: String) {
         when (tool) {
-            "pointer" -> mToolList.add(ToolModel(R.drawable.zl_select, ToolType.POINTER))
-            "shape" -> mToolList.add(ToolModel( R.drawable.ic_shape, ToolType.SHAPE))
-            "clip" -> mToolList.add(ToolModel(R.drawable.ic_crop, ToolType.CLIP))
-            "text" -> mToolList.add(ToolModel(R.drawable.ic_text, ToolType.TEXT))
-            "filter" -> mToolList.add(ToolModel(R.drawable.ic_photo_filter, ToolType.FILTER))
-            "emoji" -> mToolList.add(ToolModel(R.drawable.ic_insert_emoticon, ToolType.EMOJI))
-            "sticker" -> mToolList.add(ToolModel(R.drawable.ic_sticker, ToolType.STICKER))
+            "pointer" -> mToolList.add(ToolModel(R.drawable.zl_select, R.drawable.zl_select_selected, ToolType.POINTER))
+            "shape" -> mToolList.add(ToolModel( R.drawable.ic_shape, R.drawable.zl_shape_selected, ToolType.SHAPE))
+            "clip" -> mToolList.add(ToolModel(R.drawable.ic_crop, R.drawable.zl_clip_selected, ToolType.CLIP))
+            "text" -> mToolList.add(ToolModel(R.drawable.ic_text, R.drawable.zl_textsticker_selected, ToolType.TEXT))
+            "filter" -> mToolList.add(ToolModel(R.drawable.ic_photo_filter, R.drawable.zl_filter_selected, ToolType.FILTER))
+            "emoji" -> mToolList.add(ToolModel(R.drawable.ic_insert_emoticon, R.drawable.zl_mosaic_selected, ToolType.EMOJI))
+            "sticker" -> mToolList.add(ToolModel(R.drawable.ic_sticker, R.drawable.zl_imagesticker_selected, ToolType.STICKER))
         }
     }
 

@@ -24,11 +24,6 @@ class ShapeBSFragment : BottomSheetDialogFragment(), SeekBar.OnSeekBarChangeList
     private lateinit var mRectRadioButton: RadioButton
     private lateinit var mOvalRadioButton: RadioButton
 
-//    private lateinit var mBrushImg: ImageView
-//    private lateinit var mLineImg: ImageView
-//    private lateinit var mArrowImg: ImageView
-//    private lateinit var mRectImg: ImageView
-//    private lateinit var mOvalImg: ImageView
 
     private var isInteractionReady = false
     private var shapeTools: MutableList<String> = mutableListOf() // arrayOf("draw", "line", "arrow", "square", "circle")
@@ -142,7 +137,6 @@ class ShapeBSFragment : BottomSheetDialogFragment(), SeekBar.OnSeekBarChangeList
 
         val activity = requireActivity()
 
-        // TODO(lucianocheng): Move layoutManager to a xml file.
         val layoutManager = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
         rvColor.layoutManager = layoutManager
         rvColor.setHasFixedSize(true)
@@ -150,7 +144,6 @@ class ShapeBSFragment : BottomSheetDialogFragment(), SeekBar.OnSeekBarChangeList
         colorPickerAdapter.setOnColorPickerClickListener(object : OnColorPickerClickListener {
             override fun onColorPickerClickListener(colorCode: Int) {
                 if (mProperties != null) {
-//                    dismiss()
                     mProperties!!.onColorChanged(colorCode)
                 }
             }

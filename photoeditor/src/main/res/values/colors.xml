@@ -28,7 +28,7 @@
     <color name="ucrop_color_widget_rotate_mid_line">@color/editing_highlight_color</color>
     <color name="ucrop_color_active_aspect_ratio">@color/editing_highlight_color</color>
     <color name="ucrop_color_widget_text">@color/editing_highlight_color</color>
-
+    <color name="top_palette_dialog">#141414</color>
 
 
 </resources>

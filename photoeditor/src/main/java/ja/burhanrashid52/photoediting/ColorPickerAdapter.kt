@@ -7,6 +7,8 @@ import android.graphics.drawable.GradientDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.LinearLayout
 import androidx.recyclerview.widget.RecyclerView
 import androidx.core.content.ContextCompat
 import ja.burhanrashid52.photoeditor.R
@@ -23,7 +25,8 @@ class ColorPickerAdapter internal constructor(
     private val colorPickerColors: List<Int>
     private lateinit var onColorPickerClickListener: OnColorPickerClickListener
 
-    private var selectedPosition: Int = RecyclerView.NO_POSITION
+    private var selectedPosition: Int = 0 // RecyclerView.NO_POSITION
+    private var addTransparent: Boolean = false
 
     internal constructor(context: Context) : this(context, getDefaultColors(context, false)) {
         this.context = context
@@ -36,6 +39,7 @@ class ColorPickerAdapter internal constructor(
     ) {
         this.context = context
         inflater = LayoutInflater.from(context)
+        this.addTransparent = addTransparent
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -46,11 +50,19 @@ class ColorPickerAdapter internal constructor(
     override fun onBindViewHolder(holder: ViewHolder, @SuppressLint("RecyclerView") position: Int) {
         val borderWidth = if (position == selectedPosition) 10 else 4
 
-        val drawable = GradientDrawable()
-        drawable.shape = GradientDrawable.OVAL
-        drawable.setColor(colorPickerColors[position]) // warna dari list
-        drawable.setStroke(borderWidth, Color.WHITE)
-        holder.colorPickerView.background = drawable
+        if(this.addTransparent && position == 0) {
+            holder.colorPickerView.visibility = View.GONE
+            holder.transparentPickerView.visibility = View.VISIBLE
+        } else {
+            val drawable = GradientDrawable()
+            drawable.shape = GradientDrawable.OVAL
+            drawable.setColor(colorPickerColors[position])
+            drawable.setStroke(borderWidth, Color.WHITE)
+            holder.colorPickerView.background = drawable
+            holder.colorPickerView.visibility = View.VISIBLE
+            holder.transparentPickerView.visibility = View.GONE
+        }
+
 
     }
 
@@ -64,6 +76,7 @@ class ColorPickerAdapter internal constructor(
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         var colorPickerView: View = itemView.findViewById(R.id.color_picker_view)
+        var transparentPickerView: View = itemView.findViewById(R.id.transparent_picker_view)
 
         init {
             itemView.setOnClickListener {
