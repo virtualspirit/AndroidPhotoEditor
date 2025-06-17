@@ -4,6 +4,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.RelativeLayout
 import android.widget.TextView
+import ja.burhanrashid52.photoediting.EditImageActivity
 import ja.burhanrashid52.photoediting.StrokeStyle
 import ja.burhanrashid52.photoeditor.shape.ShapeView
 
@@ -131,6 +132,24 @@ class GraphicManager(
             ActionType.CROP -> lastAction.oldBitmap?.let {
                 mPhotoEditorView.source.setImageBitmap(it)
             }
+
+            ActionType.FILTER -> {
+                val activity = (mPhotoEditorView.context as? EditImageActivity)
+                activity?.let {
+                    val originalBitmap = it.originalBitmap
+                    if (originalBitmap != null) {
+                        val photoEditor = it.mPhotoEditor
+                        lastAction.oldFilter?.let { it1 ->
+                            photoEditor.setFilterEffect(originalBitmap,
+                                it1
+                            )
+                        }
+
+                        // Update state filter saat ini di Activity
+                        it.currentPhotoFilter = lastAction.oldFilter!!
+                    }
+                }
+            }
         }
 
         mViewState.pushRedoAction(lastAction)
@@ -194,6 +213,25 @@ class GraphicManager(
 
             ActionType.CROP -> lastRedoAction.newBitmap?.let {
                 mPhotoEditorView.source.setImageBitmap(it)
+            }
+
+            ActionType.FILTER -> {
+                val activity = (mPhotoEditorView.context as? EditImageActivity)
+                activity?.let {
+                    val originalBitmap = it.originalBitmap
+                    if (originalBitmap != null) {
+                        // Terapkan filter BARU ke bitmap ASLI
+                        val photoEditor = it.mPhotoEditor
+                        lastRedoAction.newFilter?.let { it1 ->
+                            photoEditor.setFilterEffect(originalBitmap,
+                                it1
+                            )
+                        }
+
+                        // Update state filter saat ini di Activity
+                        it.currentPhotoFilter = lastRedoAction.newFilter!!
+                    }
+                }
             }
         }
 

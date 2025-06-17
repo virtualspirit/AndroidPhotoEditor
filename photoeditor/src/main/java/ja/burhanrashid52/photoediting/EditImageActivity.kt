@@ -6,6 +6,7 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
@@ -97,7 +98,9 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     private var mIsFilterVisible = false
     private var isModule = true
     private var sourceUri: Uri? = null
-    private var bitmapBeforeCrop: Bitmap? = null
+//    private var bitmapBeforeCrop: Bitmap? = null
+    var originalBitmap: Bitmap? = null
+    var currentPhotoFilter: PhotoFilter = PhotoFilter.NONE
 
     @VisibleForTesting
     var mSaveImageUri: Uri? = null
@@ -170,46 +173,110 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
 
         initTools(tools)
 
+//        if (path != null) {
+//            Glide
+//                .with(this)
+//                .load(path)
+//                .listener(object : RequestListener<Drawable>{
+//                    override fun onLoadFailed(
+//                        e: GlideException?,
+//                        model: Any?,
+//                        target: Target<Drawable>,
+//                        isFirstResource: Boolean
+//                    ): Boolean {
+//                        if (isModule) {
+//                            val intent = Intent()
+//                            intent.putExtra("path", path)
+//                            setResult(ResponseCode.LOAD_IMAGE_FAILED, intent)
+//                            finish()
+//                        }
+//                        return false
+//                    }
+//
+//                    override fun onResourceReady(
+//                        resource: Drawable,
+//                        model: Any,
+//                        target: Target<Drawable>?,
+//                        dataSource: DataSource,
+//                        isFirstResource: Boolean
+//                    ): Boolean {
+//                        sourceUri = getImageUri(resource);
+//                        return false
+//                    }
+//                })
+//                .into(mPhotoEditorView.source)
+//        } else {
+//            //Set Image Dynamically
+//            isModule = false
+//            sourceUri = getImageUri(applicationContext.getDrawable(R.drawable.paris_tower));
+//            mPhotoEditorView.source.setImageResource(R.drawable.paris_tower)
+//        }
+
+
         if (path != null) {
-            Glide
-                .with(this)
+            Glide.with(this)
+                .asBitmap()
                 .load(path)
-                .listener(object : RequestListener<Drawable>{
-                    override fun onLoadFailed(
-                        e: GlideException?,
-                        model: Any?,
-                        target: Target<Drawable>,
-                        isFirstResource: Boolean
-                    ): Boolean {
+                .into(object : com.bumptech.glide.request.target.CustomTarget<Bitmap>() {
+                    override fun onResourceReady(resource: Bitmap, transition: com.bumptech.glide.request.transition.Transition<in Bitmap>?) {
+
+                        originalBitmap = resource
+                        mPhotoEditorView.source.setImageBitmap(resource)
+                        sourceUri = getImageUri(resource)
+                    }
+                    override fun onLoadFailed(errorDrawable: Drawable?) {
+                        super.onLoadFailed(errorDrawable)
+                        // Tangani kasus gagal muat di sini
+                        Log.e("EditImageActivity", "Glide failed to load image from path: $path")
                         if (isModule) {
                             val intent = Intent()
                             intent.putExtra("path", path)
                             setResult(ResponseCode.LOAD_IMAGE_FAILED, intent)
                             finish()
                         }
-                        return false
                     }
 
-                    override fun onResourceReady(
-                        resource: Drawable,
-                        model: Any,
-                        target: Target<Drawable>?,
-                        dataSource: DataSource,
-                        isFirstResource: Boolean
-                    ): Boolean {
-                        sourceUri = getImageUri(resource);
-                        return false
+                    override fun onLoadCleared(placeholder: Drawable?) {
+                        TODO("Not yet implemented")
                     }
                 })
-                .into(mPhotoEditorView.source)
         } else {
-            //Set Image Dynamically
             isModule = false
-            sourceUri = getImageUri(applicationContext.getDrawable(R.drawable.paris_tower));
-            mPhotoEditorView.source.setImageResource(R.drawable.paris_tower)
+
+            val defaultDrawable = ContextCompat.getDrawable(applicationContext, R.drawable.paris_tower)
+
+            if (defaultDrawable != null) {
+                val defaultBitmap = drawableToBitmap(defaultDrawable)
+                originalBitmap = defaultBitmap
+                mPhotoEditorView.source.setImageBitmap(defaultBitmap)
+
+                sourceUri = getImageUri(defaultBitmap)
+            } else {
+                showSnackbar("Failed to load default image.")
+            }
         }
 
         mSaveFileHelper = FileSaveHelper(this)
+    }
+
+    private fun drawableToBitmap(drawable: Drawable): Bitmap {
+        if (drawable is BitmapDrawable) {
+            if (drawable.bitmap != null) {
+                return drawable.bitmap
+            }
+        }
+
+        val bitmap: Bitmap
+        if (drawable.intrinsicWidth <= 0 || drawable.intrinsicHeight <= 0) {
+            bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+        } else {
+            bitmap = Bitmap.createBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight, Bitmap.Config.ARGB_8888)
+        }
+
+        val canvas = Canvas(bitmap)
+        drawable.setBounds(0, 0, canvas.width, canvas.height)
+        drawable.draw(canvas)
+        return bitmap
     }
 
     fun updateActionButtonsState() {
@@ -218,7 +285,6 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
 
         mImgDelete.isEnabled =  mPhotoEditor.isAnyViewSelected()
         mImgDuplicate.isEnabled =  mPhotoEditor.isAnyViewSelected()
-//        mImgPalette.isEnabled =  mPhotoEditor.isAnyViewSelected()
     }
 
     private fun handleIntentImage(source: ImageView) {
@@ -337,6 +403,8 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     override fun onEditTextChangeListener(rootView: View, text: String, colorCode: Int, backgroundColor: Int) {
         val textView = rootView.findViewById<TextView>(R.id.tvPhotoEditorText)
         val currentTextSize = textView.textSize / resources.displayMetrics.scaledDensity
+
+        Log.d("TextGraphicDebug", "Listener in Activity received: text='$text', view hash=${rootView.hashCode()}")
 
         val textEditorDialogFragment = TextEditorDialogFragment.show(this, text, colorCode, backgroundColor, currentTextSize)
         textEditorDialogFragment.setOnTextEditorListener(object :
@@ -568,7 +636,8 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
                         try {
                             val newBitmap = MediaStore.Images.Media.getBitmap(contentResolver, resultUri)
 
-                            val oldBitmap = bitmapBeforeCrop
+//                            val oldBitmap = bitmapBeforeCrop
+                            val oldBitmap = originalBitmap
 
                             if (oldBitmap != null) {
                                 mPhotoEditor.addCropAction(oldBitmap, newBitmap)
@@ -647,7 +716,19 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     }
 
     override fun onFilterSelected(photoFilter: PhotoFilter) {
-        mPhotoEditor.setFilterEffect(photoFilter)
+//        mPhotoEditor.setFilterEffect(photoFilter)
+        Log.e("wew", "filter: ${photoFilter.name} ori:  ${currentPhotoFilter.name}")
+        if (currentPhotoFilter == photoFilter) return
+
+        val oldFilter = currentPhotoFilter
+        val newFilter = photoFilter
+
+        mPhotoEditor.addFilterAction(oldFilter, newFilter)
+
+        originalBitmap?.let { mPhotoEditor.setFilterEffect(it, newFilter) }
+
+        currentPhotoFilter = newFilter
+        mImgUndo.isEnabled = true
     }
 
     override fun onToolSelected(toolType: ToolType) {
@@ -663,6 +744,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
                 Log.d("DrawingView", "masuk")
                 mTxtCurrentTool.setText(R.string.label_shape)
                 showBottomSheetDialogFragment(mShapeBSFragment)
+                showFilter(false)
             }
 
             ToolType.TEXT -> {
@@ -702,7 +784,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
                 showFilter(false)
             }
             ToolType.CLIP -> {
-                bitmapBeforeCrop = (mPhotoEditorView.source.drawable as? BitmapDrawable)?.bitmap
+//                bitmapBeforeCrop = (mPhotoEditorView.source.drawable as? BitmapDrawable)?.bitmap
                 sourceUri?.let {
                     val options =
                         Options()
@@ -717,6 +799,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
 
             ToolType.POINTER -> {
                 mTxtCurrentTool.setText(R.string.label_pointer)
+                showFilter(false)
             }
         }
     }
@@ -783,6 +866,20 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         val outputStream = FileOutputStream(file)
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
         outputStream.close()
+        return file.toUri()
+    }
+
+    fun getImageUri(bitmap: Bitmap): Uri {
+        val context = applicationContext
+        val file = File(context.cacheDir, "source_image_${System.currentTimeMillis()}.png")
+        try {
+            val outputStream = FileOutputStream(file)
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+            outputStream.flush()
+            outputStream.close()
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
         return file.toUri()
     }
 

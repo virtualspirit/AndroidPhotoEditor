@@ -49,6 +49,7 @@ class MultiTouchListener(
     internal var mOnPhotoEditorListener: OnPhotoEditorListener? = null
     private val viewState: PhotoEditorViewState
     private var initialTransform: ViewTransform? = null
+    private lateinit var currentView: View
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouch(view: View, event: MotionEvent): Boolean {
@@ -60,6 +61,7 @@ class MultiTouchListener(
         val action = event.action
         val x = event.rawX.toInt()
         val y = event.rawY.toInt()
+        currentView = view
         when (action and event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 mPrevX = event.x
@@ -198,8 +200,8 @@ class MultiTouchListener(
     }
 
     interface OnGestureControl {
-        fun onClick()
-        fun onLongClick()
+        fun onClick(view: View)
+        fun onLongClick(view: View)
     }
 
     fun setOnGestureControl(onGestureControl: OnGestureControl?) {
@@ -208,14 +210,14 @@ class MultiTouchListener(
 
     private inner class GestureListener : SimpleOnGestureListener() {
         override fun onSingleTapUp(e: MotionEvent): Boolean {
-            mOnGestureControl?.onClick()
+            mOnGestureControl?.onClick(currentView)
 
             return true
         }
 
         override fun onLongPress(e: MotionEvent) {
             super.onLongPress(e)
-            mOnGestureControl?.onLongClick()
+            mOnGestureControl?.onLongClick(currentView)
         }
     }
 

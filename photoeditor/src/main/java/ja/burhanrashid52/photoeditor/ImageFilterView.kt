@@ -62,6 +62,7 @@ internal class ImageFilterView @JvmOverloads constructor(
         }*/
         mSourceBitmap = sourceBitmap
         mInitialized = false
+        requestRender()
     }
 
     override fun onSurfaceCreated(gl: GL10, config: EGLConfig) {}

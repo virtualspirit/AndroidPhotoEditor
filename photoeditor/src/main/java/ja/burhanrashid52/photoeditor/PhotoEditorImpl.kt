@@ -264,7 +264,9 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
                     withTextColor(originalTextView.currentTextColor)
                     val cd = originalTextView.background as ColorDrawable
                     val colorCode = cd.color
+                    val oldTextSizeInSp = originalTextView.textSize / context.resources.displayMetrics.scaledDensity
                     withBackgroundColor(colorCode)
+                    withTextSize(oldTextSizeInSp)
                 }
 
                 if (originalTextView != null) {
@@ -289,6 +291,15 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
             newBitmap = newBitmap
         )
         mGraphicManager.pushUndoAction(action)
+    }
+
+    override fun addFilterAction(oldFilter: PhotoFilter, newFilter: PhotoFilter) {
+        val filterAction = EditorAction(
+            view = photoEditorView,
+            actionType = ActionType.FILTER,
+            oldFilter = oldFilter,
+            newFilter= newFilter)
+        mGraphicManager.pushUndoAction(filterAction)
     }
 
     override fun setBrushDrawingMode(brushDrawingMode: Boolean) {
@@ -330,6 +341,10 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
 
     override fun setFilterEffect(filterType: PhotoFilter) {
         photoEditorView.setFilterEffect(filterType)
+    }
+
+    override fun setFilterEffect(sourceBitmap: Bitmap, filterType: PhotoFilter) {
+        photoEditorView.setFilterEffect(sourceBitmap, filterType)
     }
 
     @RequiresPermission(allOf = [Manifest.permission.WRITE_EXTERNAL_STORAGE])
@@ -554,13 +569,6 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
 
         params.leftMargin = (bounds.left - halfStrokeWidth).toInt() - (safetyMargin / 2)
         params.topMargin = (correctedTop - halfStrokeWidth).toInt() - (safetyMargin / 2)
-//        params.topMargin = touchY.toInt() * 2
-//
-//        params.leftMargin = touchX.toInt()
-//        params.topMargin = touchY.toInt()
-
-        Log.e("wew", "Shape 1: ${bounds.top} ${shapeBuilder.shapeSize} $safetyMargin")
-        Log.e("wew", "Shape params: ${params.leftMargin} ${params.topMargin} ${touchX.toInt()} ${touchY.toInt()}")
 
         shapeGraphic.rootView.layoutParams = params
 

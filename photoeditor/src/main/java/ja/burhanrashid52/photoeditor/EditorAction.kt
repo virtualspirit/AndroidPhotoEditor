@@ -5,7 +5,7 @@ import android.view.View
 import ja.burhanrashid52.photoediting.StrokeStyle
 
 enum class ActionType {
-    ADD, DELETE, TRANSFORM, CHANGE_COLOR, CHANGE_STROKE, CHANGE_STROKE_STYLE, CHANGE_TEXT, CROP
+    ADD, DELETE, TRANSFORM, CHANGE_COLOR, CHANGE_STROKE, CHANGE_STROKE_STYLE, CHANGE_TEXT, CROP, FILTER
 }
 
 data class EditorAction(
@@ -22,5 +22,7 @@ data class EditorAction(
     val oldTextStyle: TextStyleBuilder? = null,
     val newTextStyle: TextStyleBuilder? = null,
     val oldBitmap: Bitmap? = null,
-    val newBitmap: Bitmap? = null
+    val newBitmap: Bitmap? = null,
+    val oldFilter: PhotoFilter? = null,
+    val newFilter: PhotoFilter? = null,
 )

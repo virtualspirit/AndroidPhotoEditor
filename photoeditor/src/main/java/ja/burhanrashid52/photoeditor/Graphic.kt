@@ -34,16 +34,6 @@ abstract class Graphic(
 
 
     private fun setupRemoveView(rootView: View) {
-        //We are setting tag as ViewType to identify what type of the view it is
-        //when we remove the view from stack i.e onRemoveViewListener(ViewType viewType, int numberOfAddedViews);
-//        rootView.tag = viewType
-//        rootView.tag = Pair(viewType, this)
-//        val imgClose = rootView.findViewById<ImageView>(R.id.imgPhotoEditorClose)
-//        imgClose?.setOnClickListener {
-////            graphicManager?.removeView(this@Graphic)
-//        }
-
-//        rootView.tag = viewType
         rootView.tag = Pair(viewType, this)
     }
 
@@ -58,15 +48,16 @@ abstract class Graphic(
     ): OnGestureControl {
         val boxHelper = BoxHelper(photoEditorView, viewState)
         return object : OnGestureControl {
-            override fun onClick() {
+            override fun onClick(view: View) {
                 boxHelper.clearHelperBox()
                 toggleSelection()
                 // Change the in-focus view
                 viewState.currentSelectedView = rootView
+                updateView(view)
+
             }
 
-            override fun onLongClick() {
-                updateView(rootView)
+            override fun onLongClick(view: View) {
             }
         }
     }

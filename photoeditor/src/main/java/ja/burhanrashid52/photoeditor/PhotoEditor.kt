@@ -377,5 +377,7 @@ interface PhotoEditor {
     fun duplicateSelectedView(): Boolean
 
     fun addCropAction(oldBitmap: Bitmap, newBitmap: Bitmap)
+    fun addFilterAction(oldFilter: PhotoFilter, newFilter: PhotoFilter)
+    fun setFilterEffect(sourceBitmap: Bitmap, filterType: PhotoFilter)
 
 }
