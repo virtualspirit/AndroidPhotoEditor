@@ -18,8 +18,8 @@ internal class BoxHelper(
             val childAt = mPhotoEditorView.getChildAt(i)
             val frmBorder = childAt.findViewById<FrameLayout>(R.id.frmBorder)
             frmBorder?.setBackgroundResource(0)
-            val imgClose = childAt.findViewById<ImageView>(R.id.imgPhotoEditorClose)
-            imgClose?.visibility = View.GONE
+            val imgResize = childAt.findViewById<ImageView>(R.id.imgPhotoEditorResize)
+            imgResize?.visibility = View.GONE
         }
         mViewState.clearCurrentSelectedView()
         mViewState.deleteView?.isEnabled = false

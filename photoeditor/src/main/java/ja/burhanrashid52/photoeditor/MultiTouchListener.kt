@@ -6,9 +6,11 @@ import android.view.GestureDetector
 import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.MotionEvent
 import android.view.View
+import android.view.View.GONE
 import android.view.View.OnTouchListener
 import android.widget.FrameLayout
 import android.widget.ImageView
+import ja.burhanrashid52.photoeditor.Graphic.ResizeRotateTouchListener
 import kotlin.math.max
 import kotlin.math.min
 
@@ -74,13 +76,18 @@ class MultiTouchListener(
                     viewState.currentSelectedView?.let {
                         val frmBorder = it.findViewById<FrameLayout>(R.id.frmBorder)
                         frmBorder?.setBackgroundResource(0)
+                        val imgResize = it.findViewById<ImageView>(R.id.imgPhotoEditorResize)
+                        imgResize?.visibility = View.GONE
                     }
 
                     viewState.currentSelectedView = view
 
                     val frmBorder = view.findViewById<FrameLayout>(R.id.frmBorder)
                     frmBorder?.setBackgroundResource(R.drawable.rounded_border_tv)
+                    val imgResize = view.findViewById<ImageView>(R.id.imgPhotoEditorResize)
+                    imgResize?.visibility = View.VISIBLE
                 }
+
 
                 if (mDeleteView != null) {
                     mDeleteView.isEnabled = true

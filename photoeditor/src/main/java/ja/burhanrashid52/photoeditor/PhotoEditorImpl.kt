@@ -166,7 +166,7 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
         viewToGraphicMap[graphic.rootView] = graphic
 
         viewState.currentSelectedView = graphic.rootView
-        graphic.toggleSelection()
+        graphic.toggleSelection(false)
     }
 
     private fun addShape(shapeBuilder: ShapeBuilder, path: Path): Shape {

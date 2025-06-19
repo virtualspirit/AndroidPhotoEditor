@@ -49,34 +49,6 @@ class Text(
     }
 
     private fun setupGesture() {
-
-//        val onGestureControl = object : MultiTouchListener.OnGestureControl {
-//            override fun onClick() {
-//                val boxHelper = BoxHelper(mPhotoEditorView, mViewState)
-//                boxHelper.clearHelperBox()
-//                toggleSelection()
-//                mViewState.currentSelectedView = rootView
-//
-//                val textInput = mTextView?.text.toString()
-//                val currentTextColor = mTextView?.currentTextColor ?: 0
-//                val currentBackgroundColor = (mTextView?.background as? ColorDrawable)?.color ?: Color.TRANSPARENT
-//
-//                mGraphicManager.onPhotoEditorListener?.onEditTextChangeListener(
-//                    rootView,
-//                    textInput,
-//                    currentTextColor,
-//                    currentBackgroundColor
-//                )
-//            }
-//
-//            override fun onLongClick() {
-//            }
-//        }
-//
-//        mMultiTouchListener.setOnGestureControl(onGestureControl)
-//        val rootView = rootView
-//        rootView.setOnTouchListener(mMultiTouchListener)
-
         val onGestureControl = buildGestureController(mPhotoEditorView, mViewState)
         mMultiTouchListener.setOnGestureControl(onGestureControl)
         val rootView = rootView
@@ -84,6 +56,7 @@ class Text(
     }
 
     override fun setupView(rootView: View) {
+        super.setupView(rootView)
         mTextView = rootView.findViewById(R.id.tvPhotoEditorText)
         mTextView?.run {
             gravity = Gravity.CENTER

@@ -22,4 +22,15 @@
         android:visibility="gone"
         app:srcCompat="@drawable/ic_remove" />
 
+    <ImageView
+        android:id="@+id/imgPhotoEditorResize"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_gravity="bottom|end"
+        android:elevation="1dp"
+        android:src="@drawable/ic_brush"
+        app:tint="@color/white"
+        android:background="@color/blue_color_picker"
+        android:visibility="gone" />
+
 </FrameLayout>

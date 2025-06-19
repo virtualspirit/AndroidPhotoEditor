@@ -42,6 +42,7 @@ internal class Shape(
     }
 
     override fun setupView(rootView: View) {
+        super.setupView(rootView)
         shapeView = rootView.findViewById(R.id.shape_view)
     }
 

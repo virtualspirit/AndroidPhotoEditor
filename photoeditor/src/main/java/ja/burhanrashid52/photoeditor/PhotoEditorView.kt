@@ -37,7 +37,6 @@ class PhotoEditorView @JvmOverloads constructor(
 
     init {
 
-        // TAMBAHKAN DUA BARIS INI
         this.clipChildren = false
         this.clipToPadding = false
 
