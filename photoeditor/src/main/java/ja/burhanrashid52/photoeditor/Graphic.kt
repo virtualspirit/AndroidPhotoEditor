@@ -24,8 +24,8 @@ abstract class Graphic(
 
     val rootView: View
 
-    private var frmBorder: View? = null
-    private var imgResize: ImageView? = null
+    private val handles = mutableMapOf<Int, AdvancedTransformListener.HandleType>()
+    private val allHandles = mutableListOf<View>()
 
     open fun updateView(view: View) {
         //Optional for subclass to override
@@ -48,9 +48,10 @@ abstract class Graphic(
     internal fun toggleSelection(selected: Boolean) {
         val frmBorder = rootView.findViewById<View>(R.id.frmBorder)
         frmBorder?.setBackgroundResource(R.drawable.rounded_border_tv)
-        val imgResize = rootView.findViewById<ImageView>(R.id.imgPhotoEditorResize)
-        imgResize?.visibility = View.VISIBLE
+        val visibility = View.INVISIBLE
+//        val visibility = View.VISIBLE
 
+        allHandles.forEach { it.visibility = visibility }
     }
 
     protected fun buildGestureController(
@@ -75,75 +76,29 @@ abstract class Graphic(
 
     @SuppressLint("ClickableViewAccessibility")
     open fun setupView(rootView: View) {
-        imgResize = rootView.findViewById(R.id.imgPhotoEditorResize)
+        val handleIds = listOf(
+            R.id.handle_rotate, R.id.handle_top_left, R.id.handle_top_right,
+            R.id.handle_bottom_left, R.id.handle_bottom_right
+        )
 
-        imgResize?.setOnTouchListener(ResizeRotateTouchListener(rootView))
-    }
+        val handleTypes = mapOf(
+            R.id.handle_rotate to AdvancedTransformListener.HandleType.ROTATE,
+            R.id.handle_top_left to AdvancedTransformListener.HandleType.TOP_LEFT,
+            R.id.handle_top_right to AdvancedTransformListener.HandleType.TOP_RIGHT,
+            R.id.handle_bottom_left to AdvancedTransformListener.HandleType.BOTTOM_LEFT,
+            R.id.handle_bottom_right to AdvancedTransformListener.HandleType.BOTTOM_RIGHT,
+        )
 
-    class ResizeRotateTouchListener(private val viewToTransform: View) : View.OnTouchListener {
-        // Properti untuk menghitung transformasi
-        private var lastX = 0f
-        private var lastY = 0f
-        private var pivotX = 0f
-        private var pivotY = 0f
-
-        // Vektor untuk rotasi
-        private val vector = Vector2D()
-
-        override fun onTouch(v: View, event: MotionEvent): Boolean {
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    // Simpan posisi awal sentuhan dan pivot view
-                    lastX = event.rawX
-                    lastY = event.rawY
-
-                    // Hitung pivot di tengah view
-                    val location = IntArray(2)
-                    viewToTransform.getLocationOnScreen(location)
-                    pivotX = location[0] + viewToTransform.width / 2f
-                    pivotY = location[1] + viewToTransform.height / 2f
-
-                    // Beri tahu view parent agar tidak mengintersep touch event
-                    v.parent.requestDisallowInterceptTouchEvent(true)
-                }
-                MotionEvent.ACTION_MOVE -> {
-                    val currentX = event.rawX
-                    val currentY = event.rawY
-
-                    // Hitung rotasi
-                    vector.set(lastX - pivotX, lastY - pivotY)
-                    val lastAngle = Math.toDegrees(atan2(vector.y.toDouble(), vector.x.toDouble())).toFloat()
-
-                    vector.set(currentX - pivotX, currentY - pivotY)
-                    val currentAngle = Math.toDegrees(atan2(vector.y.toDouble(), vector.x.toDouble())).toFloat()
-
-                    val rotation = currentAngle - lastAngle
-                    viewToTransform.rotation += rotation
-
-                    // Hitung skala
-                    val lastDist = getDistance(pivotX, pivotY, lastX, lastY)
-                    val currentDist = getDistance(pivotX, pivotY, currentX, currentY)
-                    val scale = currentDist / lastDist
-
-                    viewToTransform.scaleX *= scale
-                    viewToTransform.scaleY *= scale
-
-                    // Update posisi terakhir
-                    lastX = currentX
-                    lastY = currentY
-                }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    v.parent.requestDisallowInterceptTouchEvent(false)
+        handleIds.forEach { id ->
+            val handleView = rootView.findViewById<View>(id)
+            if (handleView != null) {
+                allHandles.add(handleView)
+                handleTypes[id]?.let { type ->
+                    handleView.setOnTouchListener(AdvancedTransformListener(this.rootView, type, allHandles))
                 }
             }
-            return true
         }
 
-        private fun getDistance(x1: Float, y1: Float, x2: Float, y2: Float): Float {
-            val dx = x1 - x2
-            val dy = y1 - y2
-            return sqrt(dx * dx + dy * dy)
-        }
     }
 
 }

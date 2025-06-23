@@ -6,11 +6,9 @@ import android.view.GestureDetector
 import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.MotionEvent
 import android.view.View
-import android.view.View.GONE
 import android.view.View.OnTouchListener
 import android.widget.FrameLayout
 import android.widget.ImageView
-import ja.burhanrashid52.photoeditor.Graphic.ResizeRotateTouchListener
 import kotlin.math.max
 import kotlin.math.min
 
@@ -76,16 +74,32 @@ class MultiTouchListener(
                     viewState.currentSelectedView?.let {
                         val frmBorder = it.findViewById<FrameLayout>(R.id.frmBorder)
                         frmBorder?.setBackgroundResource(0)
-                        val imgResize = it.findViewById<ImageView>(R.id.imgPhotoEditorResize)
-                        imgResize?.visibility = View.GONE
+                        val handles = mutableMapOf<Int, AdvancedTransformListener.HandleType>()
+                        handles[R.id.handle_rotate] = AdvancedTransformListener.HandleType.ROTATE
+                        handles[R.id.handle_top_left] = AdvancedTransformListener.HandleType.TOP_LEFT
+                        handles[R.id.handle_top_right] = AdvancedTransformListener.HandleType.TOP_RIGHT
+                        handles[R.id.handle_bottom_left] = AdvancedTransformListener.HandleType.BOTTOM_LEFT
+                        handles[R.id.handle_bottom_right] = AdvancedTransformListener.HandleType.BOTTOM_RIGHT
+                        for (id in handles.keys) {
+                            it.findViewById<View>(id)?.visibility = View.INVISIBLE
+                        }
                     }
 
                     viewState.currentSelectedView = view
 
                     val frmBorder = view.findViewById<FrameLayout>(R.id.frmBorder)
                     frmBorder?.setBackgroundResource(R.drawable.rounded_border_tv)
-                    val imgResize = view.findViewById<ImageView>(R.id.imgPhotoEditorResize)
-                    imgResize?.visibility = View.VISIBLE
+                    val handles = mutableMapOf<Int, AdvancedTransformListener.HandleType>()
+                    handles[R.id.handle_rotate] = AdvancedTransformListener.HandleType.ROTATE
+                    handles[R.id.handle_top_left] = AdvancedTransformListener.HandleType.TOP_LEFT
+                    handles[R.id.handle_top_right] = AdvancedTransformListener.HandleType.TOP_RIGHT
+                    handles[R.id.handle_bottom_left] = AdvancedTransformListener.HandleType.BOTTOM_LEFT
+                    handles[R.id.handle_bottom_right] = AdvancedTransformListener.HandleType.BOTTOM_RIGHT
+                    for (id in handles.keys) {
+//                        view.findViewById<View>(id)?.visibility = View.VISIBLE
+                        view.findViewById<View>(id)?.visibility = View.INVISIBLE
+                    }
+
                 }
 
 

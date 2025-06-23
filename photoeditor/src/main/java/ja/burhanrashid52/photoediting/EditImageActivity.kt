@@ -285,6 +285,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
 
         mImgDelete.isEnabled =  mPhotoEditor.isAnyViewSelected()
         mImgDuplicate.isEnabled =  mPhotoEditor.isAnyViewSelected()
+//        mImgPalette.isEnabled =  mPhotoEditor.isAnyViewSelected()
     }
 
     private fun handleIntentImage(source: ImageView) {
@@ -433,6 +434,11 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         )
 
         updateActionButtonsState()
+        if (viewType == ViewType.BRUSH_DRAWING) {
+            mImgPalette.isEnabled = true
+        } else {
+            mImgPalette.isEnabled = false
+        }
     }
 
     override fun onRemoveViewListener(viewType: ViewType, numberOfAddedViews: Int) {
@@ -442,11 +448,17 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         )
 
         updateActionButtonsState()
+        if (viewType == ViewType.BRUSH_DRAWING) {
+            mImgPalette.isEnabled = true
+        } else {
+            mImgPalette.isEnabled = false
+        }
     }
 
     override fun onStartViewChangeListener(viewType: ViewType) {
         Log.d(TAG, "onStartViewChangeListener() called with: viewType = [$viewType]")
         mImgDelete.isEnabled = true
+        mImgDuplicate.isEnabled = true
 
         if (viewType == ViewType.BRUSH_DRAWING) {
             mImgPalette.isEnabled = true
@@ -885,6 +897,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
 
     fun hideDeleteButton() {
         mImgDelete.isEnabled = false
+        mImgDuplicate.isEnabled = false
         mImgPalette.isEnabled = false
     }
 

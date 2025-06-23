@@ -5,4 +5,5 @@
     <dimen name="large_margin">16dp</dimen>
     <dimen name="top_tool_icon_width">50dp</dimen>
     <dimen name="button_palette">40dp</dimen>
+    <dimen name="handle_corner_radius">100dp</dimen>
 </resources>

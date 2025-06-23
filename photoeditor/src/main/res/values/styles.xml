@@ -25,4 +25,33 @@
         <item name="android:textSize">14sp</item>
     </style>
 
+    <style name="ResizeHandle">
+        <item name="android:layout_width">16dp</item>
+        <item name="android:layout_height">16dp</item>
+        <item name="android:elevation">1dp</item>
+        <item name="android:padding">4dp</item>
+    </style>
+
+    <style name="ResizeHandle.Corner" parent="ResizeHandle">
+        <item name="android:src">@drawable/handle_corner</item>
+        <item name="android:background">@android:color/transparent</item>
+    </style>
+
+    <style name="ResizeHandle.Side" parent="ResizeHandle">
+                <item name="android:src">@drawable/handle_side</item>
+        <item name="android:background">@android:color/transparent</item>
+    </style>
+
+    <style name="ResizeHandle.Rotate" parent="ResizeHandle">
+        <item name="android:src">@drawable/zl_rotateimage</item>
+<!--        <item name="android:background">@color/colorPrimary</item>-->
+<!--        <item name="tint">@color/white</item>-->
+    </style>
+
+    <style name="ControlHandle">
+        <item name="android:layout_width">16dp</item>
+        <item name="android:layout_height">16dp</item>
+        <item name="android:elevation">1dp</item>
+    </style>
+
 </resources>

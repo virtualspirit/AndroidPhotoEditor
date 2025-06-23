@@ -1,36 +1,135 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Jadikan ConstraintLayout sebagai root view -->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/frmBorder"
-    android:layout_width="150dp"
-    android:layout_height="100dp"
-    android:background="@drawable/rounded_border_tv">
+    android:id="@+id/root_view"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:padding="0dp">
 
-    <ja.burhanrashid52.photoeditor.shape.ShapeView
-        android:id="@+id/shape_view"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:ignore="ContentDescription" />
+    <!-- FrameLayout untuk border dan konten -->
+    <FrameLayout
+        android:id="@+id/frmBorder"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@drawable/rounded_border_tv"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ja.burhanrashid52.photoeditor.shape.ShapeView
+            android:id="@+id/shape_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </FrameLayout>
+
+    <!-- ... (Semua gagang dan kontrol lainnya tetap sama persis seperti sebelumnya) ... -->
+    <!-- Gagang Sudut -->
+    <ImageView
+        android:id="@+id/handle_top_left"
+        style="@style/ResizeHandle.Corner"
+        android:visibility="visible"
+        app:layout_constraintTop_toTopOf="@id/frmBorder"
+        app:layout_constraintBottom_toTopOf="@id/frmBorder"
+        app:layout_constraintStart_toStartOf="@id/frmBorder"
+        app:layout_constraintEnd_toStartOf="@id/frmBorder" />
+
+    <ImageView
+        android:id="@+id/handle_top_right"
+        style="@style/ResizeHandle.Corner"
+        android:visibility="invisible"
+        app:layout_constraintTop_toTopOf="@id/frmBorder"
+        app:layout_constraintBottom_toTopOf="@id/frmBorder"
+        app:layout_constraintStart_toEndOf="@id/frmBorder"
+        app:layout_constraintEnd_toEndOf="@id/frmBorder" />
+
+    <ImageView
+        android:id="@+id/handle_bottom_left"
+        style="@style/ResizeHandle.Corner"
+        android:visibility="invisible"
+        app:layout_constraintTop_toBottomOf="@id/frmBorder"
+        app:layout_constraintBottom_toBottomOf="@id/frmBorder"
+        app:layout_constraintStart_toStartOf="@id/frmBorder"
+        app:layout_constraintEnd_toStartOf="@id/frmBorder" />
+
+    <ImageView
+        android:id="@+id/handle_bottom_right"
+        style="@style/ResizeHandle.Corner"
+        android:visibility="invisible"
+        app:layout_constraintTop_toBottomOf="@id/frmBorder"
+        app:layout_constraintBottom_toBottomOf="@id/frmBorder"
+        app:layout_constraintStart_toEndOf="@id/frmBorder"
+        app:layout_constraintEnd_toEndOf="@id/frmBorder" />
+
+
+    <!-- Gagang Sisi -->
+    <View
+        android:id="@+id/handle_top"
+        android:layout_width="0dp"
+        android:layout_height="16dp"
+        android:background="@drawable/handle_side_bar"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/frmBorder"
+        app:layout_constraintEnd_toStartOf="@id/handle_top_right"
+        app:layout_constraintStart_toEndOf="@id/handle_top_left"
+        app:layout_constraintTop_toTopOf="@id/frmBorder" />
+
+    <View
+        android:id="@+id/handle_bottom"
+        android:layout_width="0dp"
+        android:layout_height="16dp"
+        android:background="@drawable/handle_side_bar"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/frmBorder"
+        app:layout_constraintBottom_toBottomOf="@id/frmBorder"
+        app:layout_constraintStart_toEndOf="@id/handle_bottom_left"
+        app:layout_constraintEnd_toStartOf="@id/handle_bottom_right" />
+
+    <View
+        android:id="@+id/handle_left"
+        android:layout_width="16dp"
+        android:layout_height="0dp"
+        android:background="@drawable/handle_side_bar"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/handle_bottom_left"
+        app:layout_constraintEnd_toStartOf="@id/frmBorder"
+        app:layout_constraintStart_toStartOf="@id/frmBorder"
+        app:layout_constraintTop_toBottomOf="@id/handle_top_left" />
+
+    <View
+        android:id="@+id/handle_right"
+        android:layout_width="16dp"
+        android:layout_height="0dp"
+        android:background="@drawable/handle_side_bar"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/handle_bottom_right"
+        app:layout_constraintEnd_toEndOf="@id/frmBorder"
+        app:layout_constraintStart_toEndOf="@id/frmBorder"
+        app:layout_constraintTop_toBottomOf="@id/handle_top_right" />
+
+    <!-- Kontrol Hapus dan Rotasi -->
+    <ImageView
+        android:id="@+id/handle_rotate"
+        style="@style/ControlHandle"
+        android:src="@drawable/zl_rotateimage"
+        android:layout_marginBottom="-8dp"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toTopOf="@id/frmBorder"
+        app:layout_constraintStart_toStartOf="@id/frmBorder"
+        app:layout_constraintEnd_toEndOf="@id/frmBorder" />
 
     <ImageView
         android:id="@+id/imgPhotoEditorClose"
-        android:layout_width="25dp"
-        android:layout_height="25dp"
-        android:layout_gravity="top|start"
-        android:elevation="1dp"
-        android:visibility="gone"
-        app:srcCompat="@drawable/ic_remove" />
-
-    <ImageView
-        android:id="@+id/imgPhotoEditorResize"
-        android:layout_width="28dp"
-        android:layout_height="28dp"
-        android:layout_gravity="bottom|end"
-        android:elevation="1dp"
-        android:src="@drawable/ic_brush"
+        style="@style/ControlHandle"
+        android:src="@drawable/ic_close"
         app:tint="@color/white"
-        android:background="@color/blue_color_picker"
-        android:visibility="gone" />
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="@id/handle_top_left"
+        app:layout_constraintBottom_toBottomOf="@id/handle_top_left"
+        app:layout_constraintStart_toStartOf="@id/handle_top_left"
+        app:layout_constraintEnd_toEndOf="@id/handle_top_left" />
 
-</FrameLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
