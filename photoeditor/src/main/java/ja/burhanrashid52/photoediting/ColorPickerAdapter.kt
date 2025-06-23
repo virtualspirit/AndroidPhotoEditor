@@ -33,13 +33,14 @@ class ColorPickerAdapter internal constructor(
         inflater = LayoutInflater.from(context)
     }
 
-    internal constructor(context: Context, addTransparent: Boolean = false) : this(
+    internal constructor(context: Context, addTransparent: Boolean = false, position: Int = 0) : this(
         context,
         getDefaultColors(context, addTransparent)
     ) {
         this.context = context
         inflater = LayoutInflater.from(context)
         this.addTransparent = addTransparent
+        this.selectedPosition = position
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {

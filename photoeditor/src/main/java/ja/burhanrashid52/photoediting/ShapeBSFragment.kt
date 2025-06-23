@@ -9,6 +9,7 @@ import android.widget.ImageView
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.SeekBar
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import ja.burhanrashid52.photoediting.ColorPickerAdapter.OnColorPickerClickListener
@@ -140,7 +141,8 @@ class ShapeBSFragment : BottomSheetDialogFragment(), SeekBar.OnSeekBarChangeList
         val layoutManager = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
         rvColor.layoutManager = layoutManager
         rvColor.setHasFixedSize(true)
-        val colorPickerAdapter = ColorPickerAdapter(activity)
+        val colorPickerAdapter = ColorPickerAdapter(activity, false, 2)
+        mProperties!!.onColorChanged(ContextCompat.getColor(activity, R.color.red_color_picker))
         colorPickerAdapter.setOnColorPickerClickListener(object : OnColorPickerClickListener {
             override fun onColorPickerClickListener(colorCode: Int) {
                 if (mProperties != null) {
