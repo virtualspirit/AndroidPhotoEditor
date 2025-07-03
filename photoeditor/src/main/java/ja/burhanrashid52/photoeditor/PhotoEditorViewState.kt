@@ -10,7 +10,7 @@ import java.util.*
 class PhotoEditorViewState {
     var currentSelectedView: View? = null
     var deleteView: View? = null
-    private val addedViews: MutableList<View> = ArrayList()
+    internal val addedViews: MutableList<View> = ArrayList()
 
     private val undoActions: Stack<EditorAction> = Stack()
     private val redoActions: Stack<EditorAction> = Stack()

@@ -45,11 +45,20 @@ abstract class Graphic(
         rootView.tag = Pair(viewType, this)
     }
 
+    fun updateHandlesScale() {
+        val inverseScaleX = if (rootView.scaleX == 0f) 1f else 1f / rootView.scaleX
+        val inverseScaleY = if (rootView.scaleY == 0f) 1f else 1f / rootView.scaleY
+        allHandles.forEach { handle ->
+            handle.scaleX = inverseScaleX
+            handle.scaleY = inverseScaleY
+        }
+    }
+
     internal fun toggleSelection(selected: Boolean) {
         val frmBorder = rootView.findViewById<View>(R.id.frmBorder)
         frmBorder?.setBackgroundResource(R.drawable.rounded_border_tv)
-        val visibility = View.INVISIBLE
-//        val visibility = View.VISIBLE
+//        val visibility = View.INVISIBLE
+        val visibility = View.VISIBLE
 
         allHandles.forEach { it.visibility = visibility }
     }
@@ -94,7 +103,8 @@ abstract class Graphic(
             if (handleView != null) {
                 allHandles.add(handleView)
                 handleTypes[id]?.let { type ->
-                    handleView.setOnTouchListener(AdvancedTransformListener(this.rootView, type, allHandles))
+                    handleView.setOnTouchListener(AdvancedTransformListener(this.rootView, type))
+//                    handleView.setOnTouchListener(AdvancedTransformListener(this.rootView, type, allHandles))
                 }
             }
         }

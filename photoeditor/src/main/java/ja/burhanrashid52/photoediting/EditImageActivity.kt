@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
@@ -14,6 +15,8 @@ import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
 import android.view.MotionEvent
@@ -98,14 +101,41 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     private var mIsFilterVisible = false
     private var isModule = true
     private var sourceUri: Uri? = null
-//    private var bitmapBeforeCrop: Bitmap? = null
     var originalBitmap: Bitmap? = null
     var currentPhotoFilter: PhotoFilter = PhotoFilter.NONE
+
+    private var lastPhotoEditorWidth = 0
+    private var lastPhotoEditorHeight = 0
 
     @VisibleForTesting
     var mSaveImageUri: Uri? = null
 
     private lateinit var mSaveFileHelper: FileSaveHelper
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+
+        // Tunda sedikit agar PhotoEditorView sempat diukur ulang oleh sistem
+        // untuk dimensi landscape/portrait yang baru.
+        Handler(Looper.getMainLooper()).postDelayed({
+            val newWidth = mPhotoEditorView.width
+            val newHeight = mPhotoEditorView.height
+
+            // Jangan lakukan apa-apa jika dimensi belum siap atau tidak berubah
+            if (lastPhotoEditorWidth == 0 || lastPhotoEditorHeight == 0 || (newWidth == lastPhotoEditorWidth && newHeight == lastPhotoEditorHeight)) {
+                return@postDelayed
+            }
+
+            // Dapatkan semua view yang ditambahkan dari PhotoEditor
+            // Ini memerlukan sedikit perubahan pada PhotoEditor/GraphicManager
+            (mPhotoEditor as? PhotoEditorImpl)?.repositionAllViews(lastPhotoEditorWidth, lastPhotoEditorHeight, newWidth, newHeight)
+
+            // Update dimensi terakhir
+            lastPhotoEditorWidth = newWidth
+            lastPhotoEditorHeight = newHeight
+
+        }, 100) // Tundaan 100ms biasanya cukup
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -173,46 +203,6 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
 
         initTools(tools)
 
-//        if (path != null) {
-//            Glide
-//                .with(this)
-//                .load(path)
-//                .listener(object : RequestListener<Drawable>{
-//                    override fun onLoadFailed(
-//                        e: GlideException?,
-//                        model: Any?,
-//                        target: Target<Drawable>,
-//                        isFirstResource: Boolean
-//                    ): Boolean {
-//                        if (isModule) {
-//                            val intent = Intent()
-//                            intent.putExtra("path", path)
-//                            setResult(ResponseCode.LOAD_IMAGE_FAILED, intent)
-//                            finish()
-//                        }
-//                        return false
-//                    }
-//
-//                    override fun onResourceReady(
-//                        resource: Drawable,
-//                        model: Any,
-//                        target: Target<Drawable>?,
-//                        dataSource: DataSource,
-//                        isFirstResource: Boolean
-//                    ): Boolean {
-//                        sourceUri = getImageUri(resource);
-//                        return false
-//                    }
-//                })
-//                .into(mPhotoEditorView.source)
-//        } else {
-//            //Set Image Dynamically
-//            isModule = false
-//            sourceUri = getImageUri(applicationContext.getDrawable(R.drawable.paris_tower));
-//            mPhotoEditorView.source.setImageResource(R.drawable.paris_tower)
-//        }
-
-
         if (path != null) {
             Glide.with(this)
                 .asBitmap()
@@ -257,6 +247,11 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         }
 
         mSaveFileHelper = FileSaveHelper(this)
+
+        mPhotoEditorView.post {
+            lastPhotoEditorWidth = mPhotoEditorView.width
+            lastPhotoEditorHeight = mPhotoEditorView.height
+        }
     }
 
     private fun drawableToBitmap(drawable: Drawable): Bitmap {

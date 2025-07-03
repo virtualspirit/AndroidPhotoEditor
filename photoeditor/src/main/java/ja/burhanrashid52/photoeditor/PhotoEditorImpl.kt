@@ -170,8 +170,9 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
 
         viewToGraphicMap[graphic.rootView] = graphic
 
+        graphic.updateHandlesScale()
         viewState.currentSelectedView = graphic.rootView
-        graphic.toggleSelection(false)
+        graphic.toggleSelection(true)
     }
 
     private fun addShape(shapeBuilder: ShapeBuilder, path: Path): Shape {
@@ -257,6 +258,14 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
             borderParams.width = originalFrmBorder.width
             borderParams.height = originalFrmBorder.height
             duplicatedFrmBorder.layoutParams = borderParams
+
+            val shapeView = duplicatedRootView.findViewById<ShapeView>(R.id.shape_view)
+            if (shapeView != null) {
+                val avgScale = (duplicatedRootView.scaleX + duplicatedRootView.scaleY) / 2f
+                shapeView.setParentScale(avgScale)
+            }
+
+            duplicatedGraphic.updateHandlesScale()
 
             addToEditor(duplicatedGraphic)
             return true
@@ -630,6 +639,28 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
     override fun onTransform(view: View, oldTransform: ViewTransform, newTransform: ViewTransform) {
         mGraphicManager.pushTransformAction(view, oldTransform, newTransform)
         (context as? EditImageActivity)?.updateActionButtonsState()
+    }
+
+    fun repositionAllViews(oldParentWidth: Int, oldParentHeight: Int, newParentWidth: Int, newParentHeight: Int) {
+        val views = mGraphicManager.getAllAddedViews()
+
+        for (view in views) {
+            val params = view.layoutParams as? RelativeLayout.LayoutParams ?: continue
+
+            val oldCenterX = params.leftMargin + view.width / 2f
+            val oldCenterY = params.topMargin + view.height / 2f
+
+            val relativeX = oldCenterX / oldParentWidth
+            val relativeY = oldCenterY / oldParentHeight
+
+            val newCenterX = relativeX * newParentWidth
+            val newCenterY = relativeY * newParentHeight
+
+            params.leftMargin = (newCenterX - view.width / 2f).toInt()
+            params.topMargin = (newCenterY - view.height / 2f).toInt()
+
+            view.layoutParams = params
+        }
     }
 
     override fun setOnPhotoEditorListener(onPhotoEditorListener: OnPhotoEditorListener) {

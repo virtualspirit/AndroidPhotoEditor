@@ -281,4 +281,8 @@ class GraphicManager(
     private fun applyStrokeStyleToView(view: View, style: StrokeStyle) {
         view.findViewById<ShapeView>(R.id.shape_view)?.updateStrokeStyle(style)
     }
+
+    fun getAllAddedViews(): List<View> {
+        return ArrayList(mViewState.addedViews)
+    }
 }

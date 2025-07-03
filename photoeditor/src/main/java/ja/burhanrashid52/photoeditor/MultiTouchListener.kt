@@ -96,8 +96,8 @@ class MultiTouchListener(
                     handles[R.id.handle_bottom_left] = AdvancedTransformListener.HandleType.BOTTOM_LEFT
                     handles[R.id.handle_bottom_right] = AdvancedTransformListener.HandleType.BOTTOM_RIGHT
                     for (id in handles.keys) {
-//                        view.findViewById<View>(id)?.visibility = View.VISIBLE
-                        view.findViewById<View>(id)?.visibility = View.INVISIBLE
+                        view.findViewById<View>(id)?.visibility = View.VISIBLE
+//                        view.findViewById<View>(id)?.visibility = View.INVISIBLE
                     }
 
                 }

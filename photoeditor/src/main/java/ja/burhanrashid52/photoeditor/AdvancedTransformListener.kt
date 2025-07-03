@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
+import ja.burhanrashid52.photoeditor.shape.ShapeView
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
@@ -12,7 +13,7 @@ import kotlin.math.sin
 class AdvancedTransformListener(
     private val viewToTransform: View,
     private val handleType: HandleType,
-    private val allHandles: List<View>
+//    private val allHandles: List<View>
 ) : View.OnTouchListener {
 
     enum class HandleType {
@@ -29,12 +30,14 @@ class AdvancedTransformListener(
     private var pivotY = 0f
 
     override fun onTouch(v: View, event: MotionEvent): Boolean {
+        val graphic = (viewToTransform.tag as? Pair<*, *>)?.second as? Graphic ?: return true
         if (handleType == HandleType.ROTATE) {
             Log.d("RotateDebug", "onTouch triggered for ROTATE handle! Action: ${event.action}")
         }
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 v.parent.requestDisallowInterceptTouchEvent(true)
+
                 lastX = event.rawX
                 lastY = event.rawY
 
@@ -45,6 +48,8 @@ class AdvancedTransformListener(
             }
 
             MotionEvent.ACTION_MOVE -> {
+                graphic.updateHandlesScale()
+
                 val dx = event.rawX - lastX
                 val dy = event.rawY - lastY
 
@@ -52,7 +57,7 @@ class AdvancedTransformListener(
                     HandleType.ROTATE -> handleRotation(event)
                     else -> handleResize(dx, dy)
                 }
-                applyInverseScaleToHandles()
+//                updateShapeViewStroke()
 
                 lastX = event.rawX
                 lastY = event.rawY
@@ -65,15 +70,13 @@ class AdvancedTransformListener(
         return true
     }
 
-    private fun applyInverseScaleToHandles() {
-        val inverseScaleX = 1f / viewToTransform.scaleX
-        val inverseScaleY = 1f / viewToTransform.scaleY
-        allHandles.forEach { handle ->
-            handle.scaleX = inverseScaleX
-            handle.scaleY = inverseScaleY
+    private fun updateShapeViewStroke() {
+        val shapeView = viewToTransform.findViewById<ShapeView>(R.id.shape_view)
+        if (shapeView != null) {
+            val avgScale = (viewToTransform.scaleX + viewToTransform.scaleY) / 2f
+            shapeView.setParentScale(avgScale)
         }
     }
-
     private fun handleRotation(event: MotionEvent) {
         val vector = Vector2D()
         vector.set(event.rawX - pivotX, event.rawY - pivotY)
