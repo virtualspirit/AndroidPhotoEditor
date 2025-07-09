@@ -8,6 +8,7 @@
 
     <color name="black">#000000</color>
     <color name="white">#FFFFFF</color>
+    <color name="grey">#6D6D6D</color>
     <color name="blue_color_picker">#0066FF</color>
     <color name="brown_color_picker">#AF593E</color>
     <color name="green_color_picker">#01A368</color>
@@ -27,7 +28,7 @@
     <color name="ucrop_color_widget_rotate_mid_line">@color/editing_highlight_color</color>
     <color name="ucrop_color_active_aspect_ratio">@color/editing_highlight_color</color>
     <color name="ucrop_color_widget_text">@color/editing_highlight_color</color>
-
+    <color name="top_palette_dialog">#141414</color>
 
 
 </resources>

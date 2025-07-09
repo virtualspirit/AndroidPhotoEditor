@@ -1,15 +1,50 @@
 package ja.burhanrashid52.photoeditor
 
+import android.util.Log
 import android.view.View
 import java.util.*
 
 /**
  * Tracked state of user-added views (stickers, emoji, text, etc)
  */
-internal class PhotoEditorViewState {
+class PhotoEditorViewState {
     var currentSelectedView: View? = null
-    private val addedViews: MutableList<View>
-    private val redoViews: Stack<View>
+    var deleteView: View? = null
+    internal val addedViews: MutableList<View> = ArrayList()
+
+    private val undoActions: Stack<EditorAction> = Stack()
+    private val redoActions: Stack<EditorAction> = Stack()
+
+    fun clearUndoActions() {
+        undoActions.clear()
+    }
+
+    fun pushUndoAction(action: EditorAction) {
+        undoActions.push(action)
+    }
+
+    fun popUndoAction(): EditorAction {
+        return undoActions.pop()
+    }
+
+    val undoActionsCount: Int
+        get() = undoActions.size
+
+    fun clearRedoActions() {
+        redoActions.clear()
+    }
+
+    fun pushRedoAction(action: EditorAction) {
+        redoActions.push(action)
+    }
+
+    fun popRedoAction(): EditorAction {
+        return redoActions.pop()
+    }
+
+    val redoActionsCount: Int
+        get() = redoActions.size
+
     fun clearCurrentSelectedView() {
         currentSelectedView = null
     }
@@ -56,27 +91,8 @@ internal class PhotoEditorViewState {
         return false
     }
 
-    fun clearRedoViews() {
-        redoViews.clear()
-    }
-
-    fun pushRedoView(view: View) {
-        redoViews.push(view)
-    }
-
-    fun popRedoView(): View {
-        return redoViews.pop()
-    }
-
-    val redoViewsCount: Int
-        get() = redoViews.size
-
-    fun getRedoView(index: Int): View {
-        return redoViews[index]
-    }
-
     init {
-        addedViews = ArrayList()
-        redoViews = Stack()
+//        addedViews = ArrayList()
+//        redoViews = Stack()
     }
 }

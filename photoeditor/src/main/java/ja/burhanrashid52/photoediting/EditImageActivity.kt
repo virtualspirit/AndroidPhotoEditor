@@ -5,12 +5,18 @@ import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
 import android.view.MotionEvent
@@ -41,9 +47,7 @@ import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.yalantis.ucrop.UCrop
-import com.yalantis.ucrop.UCropFragment
-import com.yalantis.ucrop.UCropFragmentCallback
-import com.yalantis.ucrop.callback.BitmapCropCallback
+import com.yalantis.ucrop.UCrop.*
 import ja.burhanrashid52.photoediting.EmojiBSFragment.EmojiListener
 import ja.burhanrashid52.photoediting.StickerBSFragment.StickerListener
 import ja.burhanrashid52.photoediting.base.BaseActivity
@@ -55,6 +59,7 @@ import ja.burhanrashid52.photoediting.tools.EditingToolsAdapter.OnItemSelected
 import ja.burhanrashid52.photoediting.tools.ToolType
 import ja.burhanrashid52.photoeditor.OnPhotoEditorListener
 import ja.burhanrashid52.photoeditor.PhotoEditor
+import ja.burhanrashid52.photoeditor.PhotoEditorImpl
 import ja.burhanrashid52.photoeditor.PhotoEditorView
 import ja.burhanrashid52.photoeditor.PhotoFilter
 import ja.burhanrashid52.photoeditor.R
@@ -68,7 +73,6 @@ import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-import kotlin.math.log
 
 class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickListener,
     PropertiesBSFragment.Properties, ShapeBSFragment.Properties, EmojiListener, StickerListener,
@@ -78,7 +82,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     private lateinit var mPhotoEditorView: PhotoEditorView
     private lateinit var mPropertiesBSFragment: PropertiesBSFragment
     private lateinit var mShapeBSFragment: ShapeBSFragment
-    private lateinit var mShapeBuilder: ShapeBuilder
+    private val mShapeBuilder = ShapeBuilder()
     private lateinit var mEmojiBSFragment: EmojiBSFragment
     private lateinit var mStickerBSFragment: StickerBSFragment
     private lateinit var mTxtCurrentTool: TextView
@@ -87,6 +91,9 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     private lateinit var mRvFilters: RecyclerView
     private lateinit var mImgUndo: View
     private lateinit var mImgRedo: View
+    private lateinit var mImgDelete: View
+    private lateinit var mImgDuplicate: View
+    private lateinit var mImgPalette: View
     private val mEditingToolsAdapter = EditingToolsAdapter(this)
     private val mFilterViewAdapter = FilterViewAdapter(this)
     private lateinit var mRootView: ConstraintLayout
@@ -94,11 +101,41 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     private var mIsFilterVisible = false
     private var isModule = true
     private var sourceUri: Uri? = null
+    var originalBitmap: Bitmap? = null
+    var currentPhotoFilter: PhotoFilter = PhotoFilter.NONE
+
+    private var lastPhotoEditorWidth = 0
+    private var lastPhotoEditorHeight = 0
 
     @VisibleForTesting
     var mSaveImageUri: Uri? = null
 
     private lateinit var mSaveFileHelper: FileSaveHelper
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+
+        // Tunda sedikit agar PhotoEditorView sempat diukur ulang oleh sistem
+        // untuk dimensi landscape/portrait yang baru.
+        Handler(Looper.getMainLooper()).postDelayed({
+            val newWidth = mPhotoEditorView.width
+            val newHeight = mPhotoEditorView.height
+
+            // Jangan lakukan apa-apa jika dimensi belum siap atau tidak berubah
+            if (lastPhotoEditorWidth == 0 || lastPhotoEditorHeight == 0 || (newWidth == lastPhotoEditorWidth && newHeight == lastPhotoEditorHeight)) {
+                return@postDelayed
+            }
+
+            // Dapatkan semua view yang ditambahkan dari PhotoEditor
+            // Ini memerlukan sedikit perubahan pada PhotoEditor/GraphicManager
+            (mPhotoEditor as? PhotoEditorImpl)?.repositionAllViews(lastPhotoEditorWidth, lastPhotoEditorHeight, newWidth, newHeight)
+
+            // Update dimensi terakhir
+            lastPhotoEditorWidth = newWidth
+            lastPhotoEditorHeight = newHeight
+
+        }, 100) // Tundaan 100ms biasanya cukup
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -158,7 +195,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
             "line",
             "arrow",
             "square",
-            "circle")
+            "circle", "pointer")
 
         value?.getStringArray("tools")?.let {
             tools = it
@@ -167,45 +204,83 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         initTools(tools)
 
         if (path != null) {
-            Glide
-                .with(this)
+            Glide.with(this)
+                .asBitmap()
                 .load(path)
-                .listener(object : RequestListener<Drawable>{
-                    override fun onLoadFailed(
-                        e: GlideException?,
-                        model: Any?,
-                        target: Target<Drawable>,
-                        isFirstResource: Boolean
-                    ): Boolean {
+                .into(object : com.bumptech.glide.request.target.CustomTarget<Bitmap>() {
+                    override fun onResourceReady(resource: Bitmap, transition: com.bumptech.glide.request.transition.Transition<in Bitmap>?) {
+
+                        originalBitmap = resource
+                        mPhotoEditorView.source.setImageBitmap(resource)
+                        sourceUri = getImageUri(resource)
+                    }
+                    override fun onLoadFailed(errorDrawable: Drawable?) {
+                        super.onLoadFailed(errorDrawable)
+                        // Tangani kasus gagal muat di sini
+                        Log.e("EditImageActivity", "Glide failed to load image from path: $path")
                         if (isModule) {
                             val intent = Intent()
                             intent.putExtra("path", path)
                             setResult(ResponseCode.LOAD_IMAGE_FAILED, intent)
                             finish()
                         }
-                        return false
                     }
 
-                    override fun onResourceReady(
-                        resource: Drawable,
-                        model: Any,
-                        target: Target<Drawable>?,
-                        dataSource: DataSource,
-                        isFirstResource: Boolean
-                    ): Boolean {
-                        sourceUri = getImageUri(resource);
-                        return false
+                    override fun onLoadCleared(placeholder: Drawable?) {
+                        TODO("Not yet implemented")
                     }
                 })
-                .into(mPhotoEditorView.source)
         } else {
-            //Set Image Dynamically
             isModule = false
-            sourceUri = getImageUri(applicationContext.getDrawable(R.drawable.paris_tower));
-            mPhotoEditorView.source.setImageResource(R.drawable.paris_tower)
+
+            val defaultDrawable = ContextCompat.getDrawable(applicationContext, R.drawable.paris_tower)
+
+            if (defaultDrawable != null) {
+                val defaultBitmap = drawableToBitmap(defaultDrawable)
+                originalBitmap = defaultBitmap
+                mPhotoEditorView.source.setImageBitmap(defaultBitmap)
+
+                sourceUri = getImageUri(defaultBitmap)
+            } else {
+                showSnackbar("Failed to load default image.")
+            }
         }
 
         mSaveFileHelper = FileSaveHelper(this)
+
+        mPhotoEditorView.post {
+            lastPhotoEditorWidth = mPhotoEditorView.width
+            lastPhotoEditorHeight = mPhotoEditorView.height
+        }
+    }
+
+    private fun drawableToBitmap(drawable: Drawable): Bitmap {
+        if (drawable is BitmapDrawable) {
+            if (drawable.bitmap != null) {
+                return drawable.bitmap
+            }
+        }
+
+        val bitmap: Bitmap
+        if (drawable.intrinsicWidth <= 0 || drawable.intrinsicHeight <= 0) {
+            bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+        } else {
+            bitmap = Bitmap.createBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight, Bitmap.Config.ARGB_8888)
+        }
+
+        val canvas = Canvas(bitmap)
+        drawable.setBounds(0, 0, canvas.width, canvas.height)
+        drawable.draw(canvas)
+        return bitmap
+    }
+
+    fun updateActionButtonsState() {
+        mImgUndo.isEnabled = mPhotoEditor.isUndoAvailable
+        mImgRedo.isEnabled = mPhotoEditor.isRedoAvailable
+
+        mImgDelete.isEnabled =  mPhotoEditor.isAnyViewSelected()
+        mImgDuplicate.isEnabled =  mPhotoEditor.isAnyViewSelected()
+//        mImgPalette.isEnabled =  mPhotoEditor.isAnyViewSelected()
     }
 
     private fun handleIntentImage(source: ImageView) {
@@ -251,6 +326,18 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         mImgRedo.setOnClickListener(this)
         mImgRedo.isEnabled = false
 
+        mImgDelete = findViewById(R.id.imgRemove)
+        mImgDelete.setOnClickListener(this)
+        mImgDelete.isEnabled = false
+
+        mImgDuplicate = findViewById(R.id.imgDuplicate)
+        mImgDuplicate.setOnClickListener(this)
+        mImgDuplicate.isEnabled = false
+
+        mImgPalette = findViewById(R.id.imgPalette)
+        mImgPalette.setOnClickListener(this)
+        mImgPalette.isEnabled = false
+
         val imgCamera: ImageView = findViewById(R.id.imgCamera)
         imgCamera.setOnClickListener(this)
 
@@ -268,6 +355,9 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     }
 
     private fun initTools(tools: Array<String>)  {
+        if ("pointer" in tools) {
+            mEditingToolsAdapter.addTool("pointer")
+        }
         if ("draw" in tools || "line" in tools || "square" in tools || "circle" in tools || "arrow" in tools) {
             mEditingToolsAdapter.addTool("shape")
 
@@ -306,17 +396,29 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         }
     }
 
-    override fun onEditTextChangeListener(rootView: View, text: String, colorCode: Int) {
-        val textEditorDialogFragment =
-            TextEditorDialogFragment.show(this, text.toString(), colorCode)
+    override fun onEditTextChangeListener(rootView: View, text: String, colorCode: Int, backgroundColor: Int) {
+        val textView = rootView.findViewById<TextView>(R.id.tvPhotoEditorText)
+        val currentTextSize = textView.textSize / resources.displayMetrics.scaledDensity
+
+        Log.d("TextGraphicDebug", "Listener in Activity received: text='$text', view hash=${rootView.hashCode()}")
+
+        val textEditorDialogFragment = TextEditorDialogFragment.show(this, text, colorCode, backgroundColor, currentTextSize)
         textEditorDialogFragment.setOnTextEditorListener(object :
             TextEditorDialogFragment.TextEditorListener {
-            override fun onDone(inputText: String, colorCode: Int) {
+            override fun onDone(inputText: String, textColor: Int, backgroundColor: Int, textSize: Float) {
                 val styleBuilder = TextStyleBuilder()
-                styleBuilder.withTextColor(colorCode)
+                styleBuilder.withTextColor(textColor)
+                styleBuilder.withBackgroundColor(backgroundColor)
+                styleBuilder.withTextSize(textSize)
                 mPhotoEditor.editText(rootView, inputText, styleBuilder)
                 mTxtCurrentTool.setText(R.string.label_text)
+                mEditingToolsAdapter.selectTool(ToolType.POINTER)
             }
+
+            override fun onCancel() {
+                mEditingToolsAdapter.selectTool(ToolType.POINTER)
+            }
+
         })
     }
 
@@ -326,8 +428,12 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
             "onAddViewListener() called with: viewType = [$viewType], numberOfAddedViews = [$numberOfAddedViews]"
         )
 
-        mImgUndo.isEnabled = mPhotoEditor.isUndoAvailable
-        mImgRedo.isEnabled = mPhotoEditor.isRedoAvailable
+        updateActionButtonsState()
+        if (viewType == ViewType.BRUSH_DRAWING) {
+            mImgPalette.isEnabled = true
+        } else {
+            mImgPalette.isEnabled = false
+        }
     }
 
     override fun onRemoveViewListener(viewType: ViewType, numberOfAddedViews: Int) {
@@ -336,12 +442,24 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
             "onRemoveViewListener() called with: viewType = [$viewType], numberOfAddedViews = [$numberOfAddedViews]"
         )
 
-        mImgUndo.isEnabled = mPhotoEditor.isUndoAvailable
-        mImgRedo.isEnabled = mPhotoEditor.isRedoAvailable
+        updateActionButtonsState()
+        if (viewType == ViewType.BRUSH_DRAWING) {
+            mImgPalette.isEnabled = true
+        } else {
+            mImgPalette.isEnabled = false
+        }
     }
 
     override fun onStartViewChangeListener(viewType: ViewType) {
         Log.d(TAG, "onStartViewChangeListener() called with: viewType = [$viewType]")
+        mImgDelete.isEnabled = true
+        mImgDuplicate.isEnabled = true
+
+        if (viewType == ViewType.BRUSH_DRAWING) {
+            mImgPalette.isEnabled = true
+        } else {
+            mImgPalette.isEnabled = false
+        }
     }
 
     override fun onStopViewChangeListener(viewType: ViewType) {
@@ -352,17 +470,49 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         Log.d(TAG, "onTouchView() called with: event = [$event]")
     }
 
+    override fun onShapeCreated() {
+        mEditingToolsAdapter.selectTool(ToolType.POINTER)
+    }
+
     @SuppressLint("NonConstantResourceId", "MissingPermission")
     override fun onClick(view: View) {
         when (view.id) {
             R.id.imgUndo -> {
-                mImgUndo.isEnabled = mPhotoEditor.undo()
-                mImgRedo.isEnabled = mPhotoEditor.isRedoAvailable
+                mPhotoEditor.undo()
+                updateActionButtonsState()
             }
 
             R.id.imgRedo -> {
-                mImgUndo.isEnabled = mPhotoEditor.isUndoAvailable
-                mImgRedo.isEnabled = mPhotoEditor.redo()
+                mPhotoEditor.redo()
+                updateActionButtonsState()
+            }
+
+            R.id.imgRemove -> {
+                mPhotoEditor.deleteSelectedView()
+                updateActionButtonsState()
+            }
+
+            R.id.imgDuplicate -> {
+                mPhotoEditor.duplicateSelectedView()
+                updateActionButtonsState()
+            }
+            R.id.imgPalette -> {
+                val currentStroke = mPhotoEditor.getSelectedViewStrokeWidth()
+                    ?: TopPaletteDialogFragment.STROKE_MEDIUM
+                val currentStyle = mPhotoEditor.getSelectedViewStrokeStyle()
+                    ?: StrokeStyle.SOLID
+
+                val topSheet = TopPaletteDialogFragment.newInstance(currentStroke, currentStyle)
+                topSheet.setOnColorSelectListener { color ->
+                    mPhotoEditor.changeSelectedViewColor(color)
+                }
+                topSheet.setOnStrokeWidthSelectListener { width ->
+                    mPhotoEditor.changeSelectedViewStrokeWidth(width)
+                }
+                topSheet.setOnStrokeStyleSelectListener { style ->
+                    mPhotoEditor.changeSelectedViewStrokeStyle(style)
+                }
+                topSheet.show(supportFragmentManager, "ColorPickerTopSheet")
             }
 
             R.id.btnDone -> saveImage()
@@ -477,6 +627,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     //                     See https://developer.android.com/training/basics/intents/result
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        mEditingToolsAdapter.selectTool(ToolType.POINTER)
         if (resultCode == RESULT_OK) {
             Log.d("RESULT", resultCode.toString())
             Log.d("REQUEST", requestCode.toString())
@@ -486,16 +637,27 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
                     val photo = data?.extras?.get("data") as Bitmap?
                     mPhotoEditorView.source.setImageBitmap(photo)
                 }
+                REQUEST_CROP -> {
+                    val resultUri = data?.let { getOutput(it) }
+                    if (resultUri != null) {
+                        try {
+                            val newBitmap = MediaStore.Images.Media.getBitmap(contentResolver, resultUri)
 
-                69 -> try {
-                    val bitmap = MediaStore.Images.Media.getBitmap(
-                        contentResolver, sourceUri
-                    )
-                    mPhotoEditorView.source.setImageBitmap(bitmap)
-                } catch (e: IOException) {
-                    e.printStackTrace()
+//                            val oldBitmap = bitmapBeforeCrop
+                            val oldBitmap = originalBitmap
+
+                            if (oldBitmap != null) {
+                                mPhotoEditor.addCropAction(oldBitmap, newBitmap)
+                            }
+
+                            mPhotoEditorView.source.setImageBitmap(newBitmap)
+                            mEditingToolsAdapter.selectTool(ToolType.POINTER)
+                        } catch (e: IOException) {
+                            e.printStackTrace()
+                            showSnackbar("Failed to load cropped image")
+                        }
+                    }
                 }
-
                 PICK_REQUEST -> try {
                     mPhotoEditor.clearAllViews()
                     val uri = data?.data
@@ -511,22 +673,26 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     }
 
     override fun onColorChanged(colorCode: Int) {
-        mPhotoEditor.setShape(mShapeBuilder.withShapeColor(colorCode))
+        mShapeBuilder.withShapeColor(colorCode)
+        mPhotoEditor.setShape(mShapeBuilder)
         mTxtCurrentTool.setText(R.string.label_brush)
     }
 
     override fun onOpacityChanged(opacity: Int) {
+        mShapeBuilder.withShapeOpacity(opacity)
         mPhotoEditor.setShape(mShapeBuilder.withShapeOpacity(opacity))
         mTxtCurrentTool.setText(R.string.label_brush)
     }
 
     override fun onShapeSizeChanged(shapeSize: Int) {
+        mShapeBuilder.withShapeSize(shapeSize.toFloat())
         mPhotoEditor.setShape(mShapeBuilder.withShapeSize(shapeSize.toFloat()))
         mTxtCurrentTool.setText(R.string.label_brush)
     }
 
     override fun onShapePicked(shapeType: ShapeType) {
-        mPhotoEditor.setShape(mShapeBuilder.withShapeType(shapeType))
+        mShapeBuilder.withShapeType(shapeType)
+        mPhotoEditor.setShape(mShapeBuilder)
     }
 
     override fun onEmojiClick(emojiUnicode: String) {
@@ -557,15 +723,32 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     }
 
     override fun onFilterSelected(photoFilter: PhotoFilter) {
-        mPhotoEditor.setFilterEffect(photoFilter)
+//        mPhotoEditor.setFilterEffect(photoFilter)
+        Log.e("wew", "filter: ${photoFilter.name} ori:  ${currentPhotoFilter.name}")
+        if (currentPhotoFilter == photoFilter) return
+
+        val oldFilter = currentPhotoFilter
+        val newFilter = photoFilter
+
+        mPhotoEditor.addFilterAction(oldFilter, newFilter)
+
+        originalBitmap?.let { mPhotoEditor.setFilterEffect(it, newFilter) }
+
+        currentPhotoFilter = newFilter
+        mImgUndo.isEnabled = true
     }
 
     override fun onToolSelected(toolType: ToolType) {
+
+        if (toolType != ToolType.SHAPE) {
+            (mPhotoEditor as PhotoEditorImpl).exitAllDrawingModes()
+        } else{
+            (mPhotoEditor as PhotoEditorImpl).enterShapeCreatingMode()
+        }
+
         when (toolType) {
             ToolType.SHAPE -> {
-                mPhotoEditor.setBrushDrawingMode(true)
-                mShapeBuilder = ShapeBuilder()
-                mPhotoEditor.setShape(mShapeBuilder)
+                Log.d("DrawingView", "masuk")
                 mTxtCurrentTool.setText(R.string.label_shape)
                 showBottomSheetDialogFragment(mShapeBSFragment)
                 showFilter(false)
@@ -575,19 +758,21 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
                 val textEditorDialogFragment = TextEditorDialogFragment.show(this)
                 textEditorDialogFragment.setOnTextEditorListener(object :
                     TextEditorDialogFragment.TextEditorListener {
-                    override fun onDone(inputText: String, colorCode: Int) {
+                    // Update signature onDone
+                    override fun onDone(inputText: String, textColor: Int, backgroundColor: Int, textSize: Float) {
                         val styleBuilder = TextStyleBuilder()
-                        styleBuilder.withTextColor(colorCode)
+                        styleBuilder.withTextColor(textColor)
+                        styleBuilder.withBackgroundColor(backgroundColor)
+                        styleBuilder.withTextSize(textSize)
                         mPhotoEditor.addText(inputText, styleBuilder)
                         mTxtCurrentTool.setText(R.string.label_text)
+                        mEditingToolsAdapter.selectTool(ToolType.POINTER)
+                    }
+
+                    override fun onCancel() {
+                        mEditingToolsAdapter.selectTool(ToolType.POINTER)
                     }
                 })
-                showFilter(false)
-            }
-
-            ToolType.ERASER -> {
-                mPhotoEditor.brushEraser()
-                mTxtCurrentTool.setText(R.string.label_eraser_mode)
                 showFilter(false)
             }
 
@@ -599,26 +784,39 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
             ToolType.EMOJI -> {
                 showBottomSheetDialogFragment(mEmojiBSFragment)
                 showFilter(false)
+
             }
             ToolType.STICKER -> {
                 showBottomSheetDialogFragment(mStickerBSFragment)
                 showFilter(false)
             }
             ToolType.CLIP -> {
+//                bitmapBeforeCrop = (mPhotoEditorView.source.drawable as? BitmapDrawable)?.bitmap
                 sourceUri?.let {
-                    UCrop.of(it, it)
+                    val options =
+                        Options()
+                    options.setFreeStyleCropEnabled (true)
+                    of(it, it)
                         .withMaxResultSize(2048, 2048)
-                        .start(this)
+                        .withOptions(options)
+                        .start(this, UCrop.REQUEST_CROP)
                 };
+                showFilter(false)
+            }
+
+            ToolType.POINTER -> {
+                mTxtCurrentTool.setText(R.string.label_pointer)
                 showFilter(false)
             }
         }
     }
 
     private fun showBottomSheetDialogFragment(fragment: BottomSheetDialogFragment?) {
-        if (fragment == null || fragment.isAdded) {
+        Log.d("DrawingView", "masuk 1")
+        if (fragment == null) {
             return
         }
+        Log.d("DrawingView", "masuk 2")
         fragment.show(supportFragmentManager, fragment.tag)
     }
 
@@ -676,6 +874,26 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
         outputStream.close()
         return file.toUri()
+    }
+
+    fun getImageUri(bitmap: Bitmap): Uri {
+        val context = applicationContext
+        val file = File(context.cacheDir, "source_image_${System.currentTimeMillis()}.png")
+        try {
+            val outputStream = FileOutputStream(file)
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+            outputStream.flush()
+            outputStream.close()
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+        return file.toUri()
+    }
+
+    fun hideDeleteButton() {
+        mImgDelete.isEnabled = false
+        mImgDuplicate.isEnabled = false
+        mImgPalette.isEnabled = false
     }
 
     companion object {

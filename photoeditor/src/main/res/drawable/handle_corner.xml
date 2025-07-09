@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+
+
+    <!-- Layer untuk Lingkaran Putih utama (sedikit lebih kecil dari border) -->
+    <item
+        android:bottom="0dp"
+        android:left="0dp"
+        android:right="0dp"
+        android:top="0dp">
+        <shape android:shape="oval">
+            <solid android:color="@android:color/white" />
+            <size
+                android:width="1dp"
+                android:height="1dp" />
+        </shape>
+    </item>
+
+</layer-list>

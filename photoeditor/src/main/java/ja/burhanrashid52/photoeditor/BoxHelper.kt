@@ -18,10 +18,20 @@ internal class BoxHelper(
             val childAt = mPhotoEditorView.getChildAt(i)
             val frmBorder = childAt.findViewById<FrameLayout>(R.id.frmBorder)
             frmBorder?.setBackgroundResource(0)
-            val imgClose = childAt.findViewById<ImageView>(R.id.imgPhotoEditorClose)
-            imgClose?.visibility = View.GONE
+//            val imgResize = childAt.findViewById<ImageView>(R.id.imgPhotoEditorResize)
+//            imgResize?.visibility = View.GONE
+            val handles = mutableMapOf<Int, AdvancedTransformListener.HandleType>()
+            handles[R.id.handle_rotate] = AdvancedTransformListener.HandleType.ROTATE
+            handles[R.id.handle_top_left] = AdvancedTransformListener.HandleType.TOP_LEFT
+            handles[R.id.handle_top_right] = AdvancedTransformListener.HandleType.TOP_RIGHT
+            handles[R.id.handle_bottom_left] = AdvancedTransformListener.HandleType.BOTTOM_LEFT
+            handles[R.id.handle_bottom_right] = AdvancedTransformListener.HandleType.BOTTOM_RIGHT
+            for (id in handles.keys) {
+                childAt.findViewById<View>(id)?.visibility = View.INVISIBLE
+            }
         }
         mViewState.clearCurrentSelectedView()
+        mViewState.deleteView?.isEnabled = false
     }
 
     fun clearAllViews(drawingView: DrawingView?) {
@@ -35,7 +45,8 @@ internal class BoxHelper(
         }
 
         mViewState.clearAddedViews()
-        mViewState.clearRedoViews()
+        mViewState.clearRedoActions()
+        mViewState.clearUndoActions()
         drawingView?.clearAll()
     }
 }

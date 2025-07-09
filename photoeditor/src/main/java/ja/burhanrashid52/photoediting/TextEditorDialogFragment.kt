@@ -11,6 +11,7 @@ import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
+import android.widget.SeekBar
 import android.widget.TextView
 import androidx.annotation.ColorInt
 import androidx.annotation.RequiresApi
@@ -25,17 +26,24 @@ import ja.burhanrashid52.photoeditor.R
 /**
  * Created by Burhanuddin Rashid on 1/16/2018.
  */
-class TextEditorDialogFragment : DialogFragment() {
+class TextEditorDialogFragment : DialogFragment(), SeekBar.OnSeekBarChangeListener {
 
     private lateinit var mAddTextEditText: EditText
     private lateinit var mAddTextDoneBtn: Button
     private lateinit var mAddTextCancelBtn: Button
     private lateinit var mInputMethodManager: InputMethodManager
-    private var mColorCode = 0
+    private var mTextColor = 0
+    private var mBackgroundColor = Color.TRANSPARENT
+    private var mTextSize = 0f
     private var mTextEditorListener: TextEditorListener? = null
+    private lateinit var tooltipTextView: TextView
+
+    private val MIN_TEXT_SIZE = 12
+    private val MAX_TEXT_SIZE = 72
 
     interface TextEditorListener {
-        fun onDone(inputText: String, colorCode: Int)
+        fun onDone(inputText: String, textColor: Int, backgroundColor: Int, textSize: Float)
+        fun onCancel()
     }
 
     override fun onStart() {
@@ -64,6 +72,7 @@ class TextEditorDialogFragment : DialogFragment() {
 
         val activity = requireActivity()
 
+        tooltipTextView = view.findViewById(R.id.tv_tooltip)
         mAddTextEditText = view.findViewById(R.id.add_text_edit_text)
         mInputMethodManager =
             activity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
@@ -81,18 +90,42 @@ class TextEditorDialogFragment : DialogFragment() {
         //This listener will change the text color when clicked on any color from picker
         colorPickerAdapter.setOnColorPickerClickListener(object : OnColorPickerClickListener {
             override fun onColorPickerClickListener(colorCode: Int) {
-                mColorCode = colorCode
+                mTextColor  = colorCode
                 mAddTextEditText.setTextColor(colorCode)
             }
         })
 
         addTextColorPickerRecyclerView.adapter = colorPickerAdapter
 
+        //Setup the color picker for background color
+        val backgroundColorPickerRecyclerView: RecyclerView = view.findViewById(R.id.add_text_background_color_picker_recycler_view)
+        val backgroundColorLayoutManager = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
+        backgroundColorPickerRecyclerView.layoutManager = backgroundColorLayoutManager
+        backgroundColorPickerRecyclerView.setHasFixedSize(true)
+
+        val backgroundColorPickerAdapter = ColorPickerAdapter(activity, true) // Tambahkan flag untuk warna transparan
+
+        backgroundColorPickerAdapter.setOnColorPickerClickListener(object : OnColorPickerClickListener {
+            override fun onColorPickerClickListener(colorCode: Int) {
+                mBackgroundColor = colorCode
+                mAddTextEditText.setBackgroundColor(colorCode)
+            }
+        })
+        backgroundColorPickerRecyclerView.adapter = backgroundColorPickerAdapter
+
+        val sbFontSize: SeekBar = view.findViewById(R.id.sb_font_size)
+        sbFontSize.setOnSeekBarChangeListener(this)
+
         val arguments = requireArguments()
 
         mAddTextEditText.setText(arguments.getString(EXTRA_INPUT_TEXT))
-        mColorCode = arguments.getInt(EXTRA_COLOR_CODE)
-        mAddTextEditText.setTextColor(mColorCode)
+        mTextColor  = arguments.getInt(EXTRA_COLOR_CODE)
+        mBackgroundColor = arguments.getInt(EXTRA_BACKGROUND_COLOR_CODE, Color.TRANSPARENT)
+        mTextSize = arguments.getFloat(EXTRA_TEXT_SIZE, 36f)
+        mAddTextEditText.setTextColor(mTextColor)
+        mAddTextEditText.setBackgroundColor(mBackgroundColor)
+        mAddTextEditText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, mTextSize)
+        sbFontSize.progress = (mTextSize - MIN_TEXT_SIZE).toInt()
         mInputMethodManager.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
 
         //Make a callback on activity when user is done with text editing
@@ -102,12 +135,14 @@ class TextEditorDialogFragment : DialogFragment() {
             val inputText = mAddTextEditText.text.toString()
             val textEditorListener = mTextEditorListener
             if (inputText.isNotEmpty() && textEditorListener != null) {
-                textEditorListener.onDone(inputText, mColorCode)
+                textEditorListener.onDone(inputText, mTextColor, mBackgroundColor, mTextSize)
             }
         }
         mAddTextCancelBtn.setOnClickListener{ onClickListenerView ->
             mInputMethodManager.hideSoftInputFromWindow(onClickListenerView.windowToken, 0)
             dismiss()
+            val textEditorListener = mTextEditorListener
+            textEditorListener?.onCancel()
         }
     }
 
@@ -116,10 +151,23 @@ class TextEditorDialogFragment : DialogFragment() {
         mTextEditorListener = textEditorListener
     }
 
+    override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+        if (seekBar?.id == R.id.sb_font_size) {
+            mTextSize = (progress + MIN_TEXT_SIZE).toFloat()
+            mAddTextEditText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, mTextSize)
+            tooltipTextView.setText(mTextSize.toString())
+        }
+    }
+
+    override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+    override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+
     companion object {
         private val TAG: String = TextEditorDialogFragment::class.java.simpleName
         const val EXTRA_INPUT_TEXT = "extra_input_text"
         const val EXTRA_COLOR_CODE = "extra_color_code"
+        const val EXTRA_BACKGROUND_COLOR_CODE = "extra_background_color_code"
+        const val EXTRA_TEXT_SIZE = "extra_text_size"
 
         //Show dialog with provide text and text color
         //Show dialog with default text input as empty and text color white
@@ -127,11 +175,15 @@ class TextEditorDialogFragment : DialogFragment() {
         fun show(
             appCompatActivity: AppCompatActivity,
             inputText: String = "",
-            @ColorInt colorCode: Int = ContextCompat.getColor(appCompatActivity, R.color.white)
+            @ColorInt colorCode: Int = ContextCompat.getColor(appCompatActivity, R.color.white),
+            @ColorInt backgroundColor: Int = Color.TRANSPARENT,
+            textSize: Float = 36f
         ): TextEditorDialogFragment {
             val args = Bundle()
             args.putString(EXTRA_INPUT_TEXT, inputText)
             args.putInt(EXTRA_COLOR_CODE, colorCode)
+            args.putInt(EXTRA_BACKGROUND_COLOR_CODE, backgroundColor)
+            args.putFloat(EXTRA_TEXT_SIZE, textSize)
             val fragment = TextEditorDialogFragment()
             fragment.arguments = args
             fragment.show(appCompatActivity.supportFragmentManager, TAG)

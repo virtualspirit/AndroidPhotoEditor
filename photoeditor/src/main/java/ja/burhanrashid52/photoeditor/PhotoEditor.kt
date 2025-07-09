@@ -10,6 +10,7 @@ import android.widget.ImageView
 import androidx.annotation.IntRange
 import androidx.annotation.RequiresPermission
 import androidx.annotation.UiThread
+import ja.burhanrashid52.photoediting.StrokeStyle
 import ja.burhanrashid52.photoeditor.shape.ShapeBuilder
 
 /**
@@ -24,7 +25,7 @@ interface PhotoEditor {
      *
      * @param desiredImage bitmap image you want to add
      */
-    fun addImage(desiredImage: Bitmap)
+    fun addImage(desiredImage: Bitmap): Sticker
 
     /**
      * This add the text on the [PhotoEditorView] with provided parameters
@@ -55,7 +56,7 @@ interface PhotoEditor {
      * @param styleBuilder text style builder with your style
      */
     @SuppressLint("ClickableViewAccessibility")
-    fun addText(text: String, styleBuilder: TextStyleBuilder?)
+    fun addText(text: String, styleBuilder: TextStyleBuilder?): Text
 
     /**
      * This will update text and color on provided view
@@ -126,19 +127,6 @@ interface PhotoEditor {
     fun setOpacity(@IntRange(from = 0, to = 100) opacity: Int)
 
     /**
-     * set the eraser size
-     * **Note :** Eraser size is different from the normal brush size
-     *
-     * @param brushEraserSize size of eraser
-     */
-    fun setBrushEraserSize(brushEraserSize: Float)
-
-    /**
-     * @return provide the size of eraser
-     * @see PhotoEditor.setBrushEraserSize
-     */
-    val eraserSize: Float
-    /**
      * @return provide the size of eraser
      * @see PhotoEditor.setBrushSize
      */
@@ -166,18 +154,6 @@ interface PhotoEditor {
       """
     )
     var brushColor: Int
-
-    /**
-     *
-     *
-     * Its enables eraser mode after that whenever user drags on screen this will erase the existing
-     * paint
-     * <br></br>
-     * **Note** : This eraser will work on paint views only
-     *
-     *
-     */
-    fun brushEraser()
 
     /**
      * Undo the last operation perform on the [PhotoEditor]
@@ -383,4 +359,25 @@ interface PhotoEditor {
      * through the use of a ShapeBuilder.
      */
     fun setShape(shapeBuilder: ShapeBuilder) // endregion
+
+    /**
+     * Changes the color of the currently selected view.
+     * Works for both Text and Shapes.
+     * @param newColor The new color code.
+     */
+    fun changeSelectedViewColor(newColor: Int)
+    fun changeSelectedViewStrokeWidth(newWidth: Float)
+    fun getSelectedViewStrokeWidth(): Float?
+    fun changeSelectedViewStrokeStyle(newStyle: StrokeStyle)
+    fun getSelectedViewStrokeStyle(): StrokeStyle?
+
+    fun deleteSelectedView(): Boolean
+    fun isAnyViewSelected(): Boolean
+    fun onStopViewChangeListener(viewType: ViewType)
+    fun duplicateSelectedView(): Boolean
+
+    fun addCropAction(oldBitmap: Bitmap, newBitmap: Bitmap)
+    fun addFilterAction(oldFilter: PhotoFilter, newFilter: PhotoFilter)
+    fun setFilterEffect(sourceBitmap: Bitmap, filterType: PhotoFilter)
+
 }
