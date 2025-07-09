@@ -51,7 +51,7 @@ internal class Emoji(
         }
     }
 
-    init {
-        setupGesture()
-    }
+//    init {
+//        setupGesture()
+//    }
 }

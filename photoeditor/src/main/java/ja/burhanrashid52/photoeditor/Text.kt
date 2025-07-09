@@ -1,6 +1,9 @@
 package ja.burhanrashid52.photoeditor
 
+import android.graphics.Color
 import android.graphics.Typeface
+import android.graphics.drawable.ColorDrawable
+import android.util.Log
 import android.view.Gravity
 import android.view.View
 import android.widget.TextView
@@ -10,7 +13,7 @@ import android.widget.TextView
  *
  * @author <https:></https:>//github.com/burhanrashid52>
  */
-internal class Text(
+class Text(
     private val mPhotoEditorView: PhotoEditorView,
     private val mMultiTouchListener: MultiTouchListener,
     private val mViewState: PhotoEditorViewState,
@@ -22,7 +25,6 @@ internal class Text(
     viewType = ViewType.TEXT,
     layoutId = R.layout.view_photo_editor_text
 ) {
-
     private var mTextView: TextView? = null
 
     fun buildView(text: String?, styleBuilder: TextStyleBuilder?) {
@@ -30,6 +32,20 @@ internal class Text(
             this.text = text
             styleBuilder?.applyStyle(this)
         }
+    }
+
+    override fun updateView(view: View) {
+        val textViewFromView = view.findViewById<TextView>(R.id.tvPhotoEditorText)
+        val textInput = textViewFromView?.text.toString()
+        val currentTextColor = textViewFromView?.currentTextColor ?: 0
+        val currentBackgroundColor = (textViewFromView?.background as? ColorDrawable)?.color ?: Color.TRANSPARENT
+
+        mGraphicManager.onPhotoEditorListener?.onEditTextChangeListener(
+            view,
+            textInput,
+            currentTextColor,
+            currentBackgroundColor
+        )
     }
 
     private fun setupGesture() {
@@ -40,18 +56,12 @@ internal class Text(
     }
 
     override fun setupView(rootView: View) {
+        super.setupView(rootView)
         mTextView = rootView.findViewById(R.id.tvPhotoEditorText)
         mTextView?.run {
             gravity = Gravity.CENTER
             typeface = mDefaultTextTypeface
         }
-    }
-
-    override fun updateView(view: View) {
-        val textInput = mTextView?.text.toString()
-        val currentTextColor = mTextView?.currentTextColor ?: 0
-        val photoEditorListener = mGraphicManager.onPhotoEditorListener
-        photoEditorListener?.onEditTextChangeListener(view, textInput, currentTextColor)
     }
 
     init {

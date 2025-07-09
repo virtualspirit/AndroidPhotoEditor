@@ -6,7 +6,7 @@ import android.graphics.Path
 import android.graphics.RectF
 
 abstract class AbstractShape(protected val tag: String) : Shape {
-    protected var path = Path()
+    var path = Path()
     protected var left = 0f
     protected var top = 0f
     protected var right = 0f
@@ -16,14 +16,14 @@ abstract class AbstractShape(protected val tag: String) : Shape {
         canvas.drawPath(path, paint)
     }
 
-    private val bounds: RectF
+    val bounds: RectF
         get() {
             val bounds = RectF()
             path.computeBounds(bounds, true)
             return bounds
         }
 
-    fun hasBeenTapped(): Boolean {
+    override fun hasBeenTapped(): Boolean {
         val bounds = bounds
         return bounds.top < TOUCH_TOLERANCE && bounds.bottom < TOUCH_TOLERANCE && bounds.left < TOUCH_TOLERANCE && bounds.right < TOUCH_TOLERANCE
     }

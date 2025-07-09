@@ -8,4 +8,5 @@ interface Shape {
     fun startShape(x: Float, y: Float)
     fun moveShape(x: Float, y: Float)
     fun stopShape()
+    fun hasBeenTapped(): Boolean
 }

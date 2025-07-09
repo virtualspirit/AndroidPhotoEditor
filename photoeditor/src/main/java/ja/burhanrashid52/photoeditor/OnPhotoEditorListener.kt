@@ -22,7 +22,7 @@ interface OnPhotoEditorListener {
      * @param text      current text set on the view
      * @param colorCode current color value set on view
      */
-    fun onEditTextChangeListener(rootView: View, text: String, colorCode: Int)
+    fun onEditTextChangeListener(rootView: View, text: String, colorCode: Int, backgroundColor: Int)
 
     /**
      * This is a callback when user adds any view on the [PhotoEditorView] it can be
@@ -65,4 +65,7 @@ interface OnPhotoEditorListener {
      * @param event the MotionEvent associated to the touch.
      */
     fun onTouchSourceImage(event: MotionEvent)
+
+    fun onShapeCreated()
+
 }

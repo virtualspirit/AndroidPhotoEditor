@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="@dimen/normal_margin"
+    android:layout_marginTop="60dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/top_palette_dialog"
+        android:orientation="vertical"
+        android:padding="8dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Stroke Color"
+            android:textColor="@color/white" />
+
+        <!-- List Warna (sudah ada) -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvColors"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+
+        <!-- Kontrol Stroke Width -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/white"
+            android:layout_marginTop="@dimen/normal_margin"
+            android:text="Stroke Width" />
+
+        <RadioGroup
+            android:id="@+id/rgStrokeWidth"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp">
+
+            <RadioButton
+                android:id="@+id/rbStrokeSmall"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/button_palette"
+                android:button="@null"
+                android:textColor="@color/white"
+                android:background="@drawable/bg_button"
+                android:text="Small" />
+
+            <RadioButton
+                android:id="@+id/rbStrokeMedium"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                android:button="@null"
+                android:textColor="@color/white"
+                android:background="@drawable/bg_button"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/button_palette"
+                android:layout_marginHorizontal="@dimen/normal_margin"
+                android:text="Medium"
+                android:checked="true"/>
+
+            <RadioButton
+                android:id="@+id/rbStrokeLarge"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                android:button="@null"
+                android:textColor="@color/white"
+                android:background="@drawable/bg_button"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/button_palette"
+                android:text="Large" />
+        </RadioGroup>
+
+        <TextView
+            android:id="@+id/tvStrokeStyleLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/normal_margin"
+            android:textColor="@color/white"
+            android:text="Stroke Style" />
+
+        <RadioGroup
+            android:id="@+id/rgStrokeStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp">
+
+            <RadioButton
+                android:id="@+id/rbStrokeSolid"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/button_palette"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                android:button="@null"
+                android:textColor="@color/white"
+                android:background="@drawable/bg_button"
+                android:text="Solid"
+                android:checked="true" />
+
+            <RadioButton
+                android:id="@+id/rbStrokeDashed"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/button_palette"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                android:button="@null"
+                android:textColor="@color/white"
+                android:background="@drawable/bg_button"
+                android:layout_marginHorizontal="@dimen/normal_margin"
+                android:text="Dashed" />
+
+            <RadioButton
+                android:id="@+id/rbStrokeDotted"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/button_palette"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                android:button="@null"
+                android:textColor="@color/white"
+                android:background="@drawable/bg_button"
+                android:text="Dotted" />
+        </RadioGroup>
+
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

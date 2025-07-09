@@ -7,6 +7,7 @@ import android.graphics.Paint
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
 import android.util.AttributeSet
+import android.util.Log
 import android.util.Pair
 import android.view.MotionEvent
 import android.view.View
@@ -37,9 +38,7 @@ class DrawingView @JvmOverloads constructor(
     private var viewChangeListener: BrushViewChangeListener? = null
     var currentShapeBuilder: ShapeBuilder
 
-    // eraser parameters
-    private var isErasing = false
-    var eraserSize = DEFAULT_ERASER_SIZE
+    var isShapeCreatingMode = false
 
     // endregion
     private fun createPaint(): Paint {
@@ -60,13 +59,6 @@ class DrawingView @JvmOverloads constructor(
             shapeOpacity?.also { paint.alpha = it }
         }
 
-        return paint
-    }
-
-    private fun createEraserPaint(): Paint {
-        val paint = createPaint()
-        paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
-        paint.strokeWidth = eraserSize
         return paint
     }
 
@@ -94,19 +86,18 @@ class DrawingView @JvmOverloads constructor(
      */
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        return if (isDrawingEnabled) {
-            val touchX = event.x
-            val touchY = event.y
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> onTouchEventDown(touchX, touchY)
-                MotionEvent.ACTION_MOVE -> onTouchEventMove(touchX, touchY)
-                MotionEvent.ACTION_UP -> onTouchEventUp(touchX, touchY)
-            }
-            invalidate()
-            true
-        } else {
-            false
+        Log.d("DrawingView", "onTouchEvent: action=${event.action}, isDrawingEnabled=$isDrawingEnabled")
+        if (!isDrawingEnabled) return false
+
+        val touchX = event.x
+        val touchY = event.y
+        when (event.action) {
+            MotionEvent.ACTION_DOWN -> onTouchEventDown(touchX, touchY)
+            MotionEvent.ACTION_MOVE -> onTouchEventMove(touchX, touchY)
+            MotionEvent.ACTION_UP -> onTouchEventUp(touchX, touchY)
         }
+        invalidate()
+        return true
     }
 
     private fun onTouchEventDown(touchX: Float, touchY: Float) {
@@ -119,56 +110,57 @@ class DrawingView @JvmOverloads constructor(
     }
 
     private fun onTouchEventUp(touchX: Float, touchY: Float) {
-        currentShape?.apply {
-            shape.stopShape()
-            endShape(touchX, touchY)
+        Log.e("DrawingView", "Shape hasBeenTapped: $touchX $touchY")
+        val finalShape = currentShape?.shape
+        Log.d("DrawingView", "onTouchEventUp: Shape is ${finalShape?.javaClass?.simpleName}")
+        if (finalShape != null && !finalShape.hasBeenTapped()) {
+            val tapped = finalShape.hasBeenTapped()
+            Log.d("DrawingView", "Shape hasBeenTapped: $tapped")
+            Log.d("DrawingView", "Shape bounds: ${finalShape.bounds}")
+            if (isShapeCreatingMode) {
+                Log.d("DrawingView", "onShapeCreated is being called.")
+                viewChangeListener?.onShapeCreated(finalShape, touchX, touchY)
+            } else {
+                finalShape.stopShape()
+                viewChangeListener?.onStopDrawing()
+                if (redoShapes.isNotEmpty()) {
+                    redoShapes.clear()
+                }
+                viewChangeListener?.onViewAdd(this)
+            }
+        } else {
+            Log.d("DrawingView", "onTouchEventUp: finalShape is null!")
         }
+        drawShapes.clear()
+        invalidate()
+        currentShape = null
     }
 
     private fun createShape() {
         var paint = createPaint()
         var shape: AbstractShape = BrushShape()
 
-        if (isErasing) {
-            paint = createEraserPaint()
-        } else {
-            when (val shapeType = currentShapeBuilder.shapeType) {
-                ShapeType.Oval -> {
-                    shape = OvalShape()
-                }
-                ShapeType.Brush -> {
-                    shape = BrushShape()
-                }
-                ShapeType.Rectangle -> {
-                    shape = RectangleShape()
-                }
-                ShapeType.Line -> {
-                    shape = LineShape(context)
-                }
-                is ShapeType.Arrow -> {
-                    shape = LineShape(context, shapeType.pointerLocation)
-                }
+        when (val shapeType = currentShapeBuilder.shapeType) {
+            ShapeType.Oval -> {
+                shape = OvalShape()
+            }
+            ShapeType.Brush -> {
+                shape = BrushShape()
+            }
+            ShapeType.Rectangle -> {
+                shape = RectangleShape()
+            }
+            ShapeType.Line -> {
+                shape = LineShape(context)
+            }
+            is ShapeType.Arrow -> {
+                shape = LineShape(context, shapeType.pointerLocation)
             }
         }
 
         currentShape = ShapeAndPaint(shape, paint)
         drawShapes.push(currentShape)
         viewChangeListener?.onStartDrawing()
-    }
-
-    private fun endShape(touchX: Float, touchY: Float) {
-        if (currentShape?.shape?.hasBeenTapped() == true) {
-            // just a tap, this is not a shape, so remove it
-            drawShapes.remove(currentShape)
-            //handleTap(touchX, touchY);
-        }
-        viewChangeListener?.apply {
-            onStopDrawing()
-            if(redoShapes.isNotEmpty()) {
-                redoShapes.clear()
-            }
-            onViewAdd(this@DrawingView)
-        }
     }
 
     fun undo(): Boolean {
@@ -189,30 +181,18 @@ class DrawingView @JvmOverloads constructor(
         return !redoShapes.empty()
     }
 
-    // region eraser
-    fun brushEraser() {
-        isDrawingEnabled = true
-        isErasing = true
-    }
-
-    // endregion
-    // region Setters/Getters
-
     fun enableDrawing(brushDrawMode: Boolean) {
         isDrawingEnabled = brushDrawMode
-        isErasing = !brushDrawMode
         if (brushDrawMode) {
             visibility = VISIBLE
+        } else {
+            visibility = GONE
         }
     }
 
     // endregion
     val drawingPath: Pair<Stack<ShapeAndPaint?>, Stack<ShapeAndPaint?>>
         get() = Pair(drawShapes, redoShapes)
-
-    companion object {
-        const val DEFAULT_ERASER_SIZE = 50.0f
-    }
 
     // region constructors
     init {

@@ -36,6 +36,10 @@ class PhotoEditorView @JvmOverloads constructor(
     private var clipSourceImage = false
 
     init {
+
+        this.clipChildren = false
+        this.clipToPadding = false
+
         //Setup image attributes
         val sourceParam = setupImageSource(attrs)
         //Setup GLSurface attributes
@@ -69,7 +73,7 @@ class PhotoEditorView @JvmOverloads constructor(
     private fun setupImageSource(attrs: AttributeSet?): LayoutParams {
         mImgSource.id = imgSrcId
         mImgSource.adjustViewBounds = true
-        mImgSource.scaleType = ImageView.ScaleType.CENTER_INSIDE
+        mImgSource.scaleType = ImageView.ScaleType.FIT_CENTER
 
         attrs?.let {
             val a = context.obtainStyledAttributes(it, R.styleable.PhotoEditorView)
@@ -145,6 +149,12 @@ class PhotoEditorView @JvmOverloads constructor(
 
     internal fun setFilterEffect(filterType: PhotoFilter) {
         mImageFilterView.visibility = VISIBLE
+        mImageFilterView.setFilterEffect(filterType)
+    }
+
+    internal fun setFilterEffect(sourceBitmap: Bitmap, filterType: PhotoFilter) {
+        mImageFilterView.visibility = VISIBLE
+        mImageFilterView.setSourceBitmap(sourceBitmap)
         mImageFilterView.setFilterEffect(filterType)
     }
 

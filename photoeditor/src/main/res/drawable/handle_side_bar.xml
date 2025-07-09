@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <!-- Warna biru semi-transparan. Anda bisa ganti warnanya sesuai selera. -->
+    <solid android:color="#4D007BFF" />
+
+    <!-- Sedikit border untuk mempertegas area -->
+    <stroke
+        android:width="1dp"
+        android:color="#99007BFF" />
+
+    <!-- Sudut membulat agar terlihat lebih halus -->
+    <corners android:radius="4dp" />
+
+</shape>
