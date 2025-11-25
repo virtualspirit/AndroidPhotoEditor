@@ -1,27 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/root_view"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:clipChildren="false"
-    android:clipToPadding="false"
-    android:paddingTop="32dp">
+    android:clipToPadding="false">
 
     <!-- Wrapper untuk konten dan gagang resize. Ini akan jadi area utama. -->
     <FrameLayout
-        android:id="@+id/content_wrapper"
+        android:id="@+id/frmBorder"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|center_horizontal"> <!-- Posisikan di bawah -->
-
-        <!-- Kontainer utama untuk border dan konten -->
-        <FrameLayout
-            android:id="@+id/frmBorder"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-        android:background="@drawable/rounded_border_tv">
+        android:background="@drawable/rounded_border_tv"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <TextView
             android:id="@+id/tvPhotoEditorText"
@@ -35,37 +30,101 @@
     </FrameLayout>
 
     <!-- Gagang Resize Sudut -->
-    <ImageView android:id="@+id/handle_top_left"     style="@style/ResizeHandle.Corner" android:layout_gravity="top|start"     android:visibility="gone" />
-    <ImageView android:id="@+id/handle_top_right"    style="@style/ResizeHandle.Corner" android:layout_gravity="top|end"       android:visibility="gone" />
-    <ImageView android:id="@+id/handle_bottom_left"  style="@style/ResizeHandle.Corner" android:layout_gravity="bottom|start"  android:visibility="gone" />
-    <ImageView android:id="@+id/handle_bottom_right" style="@style/ResizeHandle.Corner" android:layout_gravity="bottom|end"    android:visibility="gone" />
+    <ImageView
+        android:id="@+id/handle_top_left"
+        style="@style/ResizeHandle.Corner"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="@id/frmBorder"
+        app:layout_constraintBottom_toTopOf="@id/frmBorder"
+        app:layout_constraintStart_toStartOf="@id/frmBorder"
+        app:layout_constraintEnd_toStartOf="@id/frmBorder" />
+    
+    <ImageView
+        android:id="@+id/handle_top_right"
+        style="@style/ResizeHandle.Corner"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="@id/frmBorder"
+        app:layout_constraintBottom_toTopOf="@id/frmBorder"
+        app:layout_constraintStart_toEndOf="@id/frmBorder"
+        app:layout_constraintEnd_toEndOf="@id/frmBorder" />
+    
+    <ImageView
+        android:id="@+id/handle_bottom_left"
+        style="@style/ResizeHandle.Corner"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/frmBorder"
+        app:layout_constraintBottom_toBottomOf="@id/frmBorder"
+        app:layout_constraintStart_toStartOf="@id/frmBorder"
+        app:layout_constraintEnd_toStartOf="@id/frmBorder" />
+    
+    <ImageView
+        android:id="@+id/handle_bottom_right"
+        style="@style/ResizeHandle.Corner"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/frmBorder"
+        app:layout_constraintBottom_toBottomOf="@id/frmBorder"
+        app:layout_constraintStart_toEndOf="@id/frmBorder"
+        app:layout_constraintEnd_toEndOf="@id/frmBorder" />
 
     <!-- Gagang Resize Sisi -->
-    <ImageView android:id="@+id/handle_top"    style="@style/ResizeHandle.Side" android:layout_gravity="top|center_horizontal"    android:visibility="gone" />
-    <ImageView android:id="@+id/handle_bottom" style="@style/ResizeHandle.Side" android:layout_gravity="bottom|center_horizontal" android:visibility="gone" />
-    <ImageView android:id="@+id/handle_left"   style="@style/ResizeHandle.Side" android:layout_gravity="start|center_vertical"  android:visibility="gone" />
-    <ImageView android:id="@+id/handle_right"  style="@style/ResizeHandle.Side" android:layout_gravity="end|center_vertical"    android:visibility="gone" />
+    <ImageView
+        android:id="@+id/handle_top"
+        style="@style/ResizeHandle.Side"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/frmBorder"
+        app:layout_constraintEnd_toStartOf="@id/handle_top_right"
+        app:layout_constraintStart_toEndOf="@id/handle_top_left"
+        app:layout_constraintTop_toTopOf="@id/frmBorder" />
+    
+    <ImageView
+        android:id="@+id/handle_bottom"
+        style="@style/ResizeHandle.Side"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/frmBorder"
+        app:layout_constraintBottom_toBottomOf="@id/frmBorder"
+        app:layout_constraintStart_toEndOf="@id/handle_bottom_left"
+        app:layout_constraintEnd_toStartOf="@id/handle_bottom_right" />
+    
+    <ImageView
+        android:id="@+id/handle_left"
+        style="@style/ResizeHandle.Side"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/handle_bottom_left"
+        app:layout_constraintEnd_toStartOf="@id/frmBorder"
+        app:layout_constraintStart_toStartOf="@id/frmBorder"
+        app:layout_constraintTop_toBottomOf="@id/handle_top_left" />
+    
+    <ImageView
+        android:id="@+id/handle_right"
+        style="@style/ResizeHandle.Side"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/handle_bottom_right"
+        app:layout_constraintEnd_toEndOf="@id/frmBorder"
+        app:layout_constraintStart_toEndOf="@id/frmBorder"
+        app:layout_constraintTop_toBottomOf="@id/handle_top_right" />
 
-    </FrameLayout>
+    
 
         <!-- Kontrol Hapus (tetap di pojok kiri atas DARI WRAPPER) -->
     <ImageView
         android:id="@+id/imgPhotoEditorClose"
-        android:layout_width="28dp"
-        android:layout_height="28dp"
-        android:layout_gravity="top|start"
-        android:layout_marginStart="18dp"
-        android:layout_marginTop="32dp"
-        android:elevation="1dp"
+        style="@style/ControlHandle"
         android:src="@drawable/ic_close"
         app:tint="@color/white"
-        android:visibility="gone" />
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="@id/handle_top_left"
+        app:layout_constraintBottom_toBottomOf="@id/handle_top_left"
+        app:layout_constraintStart_toStartOf="@id/handle_top_left"
+        app:layout_constraintEnd_toEndOf="@id/handle_top_left" />
 
         <!-- Gagang Rotasi (sekarang berada di area padding dari root_view) -->
     <ImageView
         android:id="@+id/handle_rotate"
-        style="@style/ResizeHandle.Rotate"
-        android:layout_gravity="top|center_horizontal"
-        android:visibility="gone" />
+        style="@style/RotateHandle"
+        android:visibility="gone"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@id/frmBorder"
+        app:layout_constraintStart_toStartOf="@id/frmBorder"
+        app:layout_constraintEnd_toEndOf="@id/frmBorder" />
 
-</FrameLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
