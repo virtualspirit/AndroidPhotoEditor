@@ -200,6 +200,11 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         value?.getStringArray("tools")?.let {
             tools = it
         }
+        
+        // Get custom sticker paths from intent if provided
+        value?.getStringArray("stickerPaths")?.let { customStickers ->
+            mStickerBSFragment.setStickerPaths(customStickers)
+        }
 
         initTools(tools)
 
@@ -207,6 +212,8 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
             Glide.with(this)
                 .asBitmap()
                 .load(path)
+                .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL)
+                .timeout(30000) // 30 seconds timeout
                 .into(object : com.bumptech.glide.request.target.CustomTarget<Bitmap>() {
                     override fun onResourceReady(resource: Bitmap, transition: com.bumptech.glide.request.transition.Transition<in Bitmap>?) {
 
@@ -216,7 +223,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
                     }
                     override fun onLoadFailed(errorDrawable: Drawable?) {
                         super.onLoadFailed(errorDrawable)
-                        // Tangani kasus gagal muat di sini
+                        // Handle load failure with better logging
                         Log.e("EditImageActivity", "Glide failed to load image from path: $path")
                         if (isModule) {
                             val intent = Intent()
@@ -227,7 +234,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
                     }
 
                     override fun onLoadCleared(placeholder: Drawable?) {
-                        TODO("Not yet implemented")
+                        // No action needed
                     }
                 })
         } else {

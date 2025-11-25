@@ -29,8 +29,23 @@ class MainActivity : AppCompatActivity() {
 
 
             intent.putExtra("path", "https://virtualspirit.me/assets/front-end/software-development@2x-93c79cac29e995da260cb38bafb3fc19b8d5307ac7f4c719d62c658a004ba701.png")
-//            val tools = arrayOf("line", "circle", "clip", "filter", "imageSticker")
-//            intent.putExtra("tools", tools)
+            val tools = arrayOf("line", "circle", "clip", "filter", "imageSticker")
+            intent.putExtra("tools", tools)
+            
+            // Custom sticker URLs
+            val customStickers = arrayOf(
+                "https://cdn-icons-png.flaticon.com/256/4392/4392452.png",
+                "https://cdn-icons-png.flaticon.com/256/4392/4392455.png",
+                "https://cdn-icons-png.flaticon.com/256/4392/4392459.png",
+                "https://cdn-icons-png.flaticon.com/256/4392/4392462.png",
+                "https://cdn-icons-png.flaticon.com/256/4392/4392465.png",
+                "https://cdn-icons-png.flaticon.com/256/4392/4392467.png",
+                "https://cdn-icons-png.flaticon.com/256/4392/4392469.png",
+                "https://cdn-icons-png.flaticon.com/256/4392/4392471.png",
+                "https://cdn-icons-png.flaticon.com/256/4392/4392522.png",
+            )
+            intent.putExtra("stickerPaths", customStickers)
+            
             startActivity(intent)
         }
     }
