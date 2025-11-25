@@ -113,10 +113,9 @@
     <!-- Kontrol Hapus dan Rotasi -->
     <ImageView
         android:id="@+id/handle_rotate"
-        style="@style/ControlHandle"
-        android:src="@drawable/zl_rotateimage"
-        android:layout_marginBottom="-8dp"
-        android:visibility="invisible"
+        style="@style/RotateHandle"
+        android:visibility="gone"
+        android:layout_marginBottom="5dp"
         app:layout_constraintBottom_toTopOf="@id/frmBorder"
         app:layout_constraintStart_toStartOf="@id/frmBorder"
         app:layout_constraintEnd_toEndOf="@id/frmBorder" />

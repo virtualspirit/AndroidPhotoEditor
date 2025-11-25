@@ -1,33 +1,78 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/root_view"
     android:layout_width="wrap_content"
-    android:layout_height="wrap_content">
-
-    <ImageView
-        android:id="@+id/imgPhotoEditorClose"
-        android:layout_width="25dp"
-        android:layout_height="25dp"
-        android:layout_gravity="top|start"
-        android:elevation="1dp"
-        android:src="@drawable/ic_remove" />
+    android:layout_height="wrap_content"
+    android:clipChildren="false"
+    android:clipToPadding="false">
 
     <FrameLayout
         android:id="@+id/frmBorder"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_margin="8dp"
-        android:background="@drawable/rounded_border_tv">
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/rounded_border_tv"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <ImageView
             android:id="@+id/imgPhotoEditorImage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_margin="4dp"
             android:adjustViewBounds="true"
             android:scaleType="fitCenter"
             android:src="@drawable/ic_remove" />
 
     </FrameLayout>
 
-</FrameLayout>
+    <!-- Corner resize handles flush to border -->
+    <ImageView
+        android:id="@+id/handle_top_left"
+        style="@style/ResizeHandle.Corner"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="@id/frmBorder"
+        app:layout_constraintBottom_toTopOf="@id/frmBorder"
+        app:layout_constraintStart_toStartOf="@id/frmBorder"
+        app:layout_constraintEnd_toStartOf="@id/frmBorder" />
+
+    <ImageView
+        android:id="@+id/handle_top_right"
+        style="@style/ResizeHandle.Corner"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="@id/frmBorder"
+        app:layout_constraintBottom_toTopOf="@id/frmBorder"
+        app:layout_constraintStart_toEndOf="@id/frmBorder"
+        app:layout_constraintEnd_toEndOf="@id/frmBorder" />
+
+    <ImageView
+        android:id="@+id/handle_bottom_left"
+        style="@style/ResizeHandle.Corner"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/frmBorder"
+        app:layout_constraintBottom_toBottomOf="@id/frmBorder"
+        app:layout_constraintStart_toStartOf="@id/frmBorder"
+        app:layout_constraintEnd_toStartOf="@id/frmBorder" />
+
+    <ImageView
+        android:id="@+id/handle_bottom_right"
+        style="@style/ResizeHandle.Corner"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/frmBorder"
+        app:layout_constraintBottom_toBottomOf="@id/frmBorder"
+        app:layout_constraintStart_toEndOf="@id/frmBorder"
+        app:layout_constraintEnd_toEndOf="@id/frmBorder" />
+
+    <!-- Rotate handle outside above the border -->
+    <ImageView
+        android:id="@+id/handle_rotate"
+        style="@style/RotateHandle"
+        android:visibility="gone"
+        android:layout_marginBottom="5dp"
+        app:layout_constraintBottom_toTopOf="@id/frmBorder"
+        app:layout_constraintStart_toStartOf="@id/frmBorder"
+        app:layout_constraintEnd_toEndOf="@id/frmBorder" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

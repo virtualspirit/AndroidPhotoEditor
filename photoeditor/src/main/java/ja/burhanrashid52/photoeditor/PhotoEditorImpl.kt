@@ -173,6 +173,7 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
         graphic.updateHandlesScale()
         viewState.currentSelectedView = graphic.rootView
         graphic.toggleSelection(true)
+        mOnPhotoEditorListener?.onStartViewChangeListener(graphic.viewType)
     }
 
     private fun addShape(shapeBuilder: ShapeBuilder, path: Path): Shape {
@@ -273,7 +274,28 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
             // ... (logika duplikasi teks tetap sama)
             return true
         } else if (viewType == ViewType.IMAGE) {
-            // ... (logika duplikasi stiker tetap sama)
+            val originalImageView = currentView.findViewById<ImageView>(R.id.imgPhotoEditorImage)
+            val bitmap = (originalImageView?.drawable as? BitmapDrawable)?.bitmap ?: return false
+
+            val duplicatedGraphic = Sticker(photoEditorView, mMultiTouchListener, viewState, mGraphicManager)
+            duplicatedGraphic.buildView(bitmap)
+
+            val duplicatedRootView = duplicatedGraphic.rootView
+
+            val originalParams = currentView.layoutParams as RelativeLayout.LayoutParams
+            duplicatedRootView.layoutParams = RelativeLayout.LayoutParams(originalParams)
+
+            duplicatedRootView.rotation = currentView.rotation
+            duplicatedRootView.scaleX = currentView.scaleX
+            duplicatedRootView.scaleY = currentView.scaleY
+
+            val offset = 30f
+            duplicatedRootView.translationX = currentView.translationX + offset
+            duplicatedRootView.translationY = currentView.translationY + offset
+
+            duplicatedGraphic.updateHandlesScale()
+
+            addToEditor(duplicatedGraphic)
             return true
         }
 

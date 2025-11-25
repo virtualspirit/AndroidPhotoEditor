@@ -97,11 +97,11 @@ class AdvancedTransformListener(
         var heightChange = 0f
 
         val angleRad = Math.toRadians(viewToTransform.rotation.toDouble())
-        val cos = cos(angleRad).toFloat()
-        val sin = sin(angleRad).toFloat()
+        val cosVal = cos(angleRad).toFloat()
+        val sinVal = sin(angleRad).toFloat()
 
-        val localDeltaX = deltaX * cos + deltaY * sin
-        val localDeltaY = -deltaX * sin + deltaY * cos
+        val localDeltaX = deltaX * cosVal + deltaY * sinVal
+        val localDeltaY = -deltaX * sinVal + deltaY * cosVal
 
         when (handleType) {
             HandleType.TOP_LEFT     -> { widthChange = -localDeltaX; heightChange = -localDeltaY }
@@ -121,37 +121,68 @@ class AdvancedTransformListener(
         val newScaleX = newWidth / viewToTransform.width
         val newScaleY = newHeight / viewToTransform.height
 
-        // Simpan skala lama sebelum diubah
         val oldScaleX = viewToTransform.scaleX
         val oldScaleY = viewToTransform.scaleY
 
-        if (newScaleX > 0.1f) {
-            viewToTransform.scaleX = newScaleX
-        }
-        if (newScaleY > 0.1f) {
-            viewToTransform.scaleY = newScaleY
-        }
+        val viewType = (viewToTransform.tag as? Pair<*, *>)?.first as? ViewType
+        val isUniformScale = (viewType == ViewType.IMAGE || viewType == ViewType.TEXT)
 
-        // --- Bagian 2: Hitung kompensasi translasi (disempurnakan) ---
-        val moveX = (viewToTransform.width * (newScaleX - oldScaleX)) / 2f
-        val moveY = (viewToTransform.height * (newScaleY - oldScaleY)) / 2f
+        if (isUniformScale) {
+            val oldScaleAvg = (oldScaleX + oldScaleY) / 2f
+            val candidateUp = maxOf(newScaleX, newScaleY)
+            val candidateDown = minOf(newScaleX, newScaleY)
+            var newUniformScale = if (candidateUp >= oldScaleAvg) candidateUp else candidateDown
+            if (newUniformScale < 0.1f) newUniformScale = 0.1f
 
-        val pivotMoveX = when (handleType) {
-            HandleType.TOP_LEFT, HandleType.BOTTOM_LEFT, HandleType.LEFT -> -moveX
-            HandleType.TOP_RIGHT, HandleType.BOTTOM_RIGHT, HandleType.RIGHT -> moveX
-            else -> 0f
+            viewToTransform.scaleX = newUniformScale
+            viewToTransform.scaleY = newUniformScale
+
+            val moveX = (viewToTransform.width * (newUniformScale - oldScaleAvg)) / 2f
+            val moveY = (viewToTransform.height * (newUniformScale - oldScaleAvg)) / 2f
+
+            val pivotMoveX = when (handleType) {
+                HandleType.TOP_LEFT, HandleType.BOTTOM_LEFT, HandleType.LEFT -> -moveX
+                HandleType.TOP_RIGHT, HandleType.BOTTOM_RIGHT, HandleType.RIGHT -> moveX
+                else -> 0f
+            }
+            val pivotMoveY = when (handleType) {
+                HandleType.TOP_LEFT, HandleType.TOP_RIGHT, HandleType.TOP -> -moveY
+                HandleType.BOTTOM_LEFT, HandleType.BOTTOM_RIGHT, HandleType.BOTTOM -> moveY
+                else -> 0f
+            }
+
+            val rotatedMoveX = pivotMoveX * cosVal - pivotMoveY * sinVal
+            val rotatedMoveY = pivotMoveX * sinVal + pivotMoveY * cosVal
+
+            viewToTransform.translationX += rotatedMoveX
+            viewToTransform.translationY += rotatedMoveY
+        } else {
+            if (newScaleX > 0.1f) {
+                viewToTransform.scaleX = newScaleX
+            }
+            if (newScaleY > 0.1f) {
+                viewToTransform.scaleY = newScaleY
+            }
+
+            val moveX = (viewToTransform.width * (newScaleX - oldScaleX)) / 2f
+            val moveY = (viewToTransform.height * (newScaleY - oldScaleY)) / 2f
+
+            val pivotMoveX = when (handleType) {
+                HandleType.TOP_LEFT, HandleType.BOTTOM_LEFT, HandleType.LEFT -> -moveX
+                HandleType.TOP_RIGHT, HandleType.BOTTOM_RIGHT, HandleType.RIGHT -> moveX
+                else -> 0f
+            }
+            val pivotMoveY = when (handleType) {
+                HandleType.TOP_LEFT, HandleType.TOP_RIGHT, HandleType.TOP -> -moveY
+                HandleType.BOTTOM_LEFT, HandleType.BOTTOM_RIGHT, HandleType.BOTTOM -> moveY
+                else -> 0f
+            }
+
+            val rotatedMoveX = pivotMoveX * cosVal - pivotMoveY * sinVal
+            val rotatedMoveY = pivotMoveX * sinVal + pivotMoveY * cosVal
+
+            viewToTransform.translationX += rotatedMoveX
+            viewToTransform.translationY += rotatedMoveY
         }
-        val pivotMoveY = when (handleType) {
-            HandleType.TOP_LEFT, HandleType.TOP_RIGHT, HandleType.TOP -> -moveY
-            HandleType.BOTTOM_LEFT, HandleType.BOTTOM_RIGHT, HandleType.BOTTOM -> moveY
-            else -> 0f
-        }
-
-        // Rotasikan vektor pergerakan kompensasi
-        val rotatedMoveX = pivotMoveX * cos - pivotMoveY * sin
-        val rotatedMoveY = pivotMoveX * sin + pivotMoveY * cos
-
-        viewToTransform.translationX += rotatedMoveX
-        viewToTransform.translationY += rotatedMoveY
     }
 }

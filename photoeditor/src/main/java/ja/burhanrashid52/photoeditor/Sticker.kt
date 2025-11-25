@@ -33,6 +33,7 @@ class Sticker(
     }
 
     override fun setupView(rootView: View) {
+        super.setupView(rootView)
         imageView = rootView.findViewById(R.id.imgPhotoEditorImage)
     }
 
