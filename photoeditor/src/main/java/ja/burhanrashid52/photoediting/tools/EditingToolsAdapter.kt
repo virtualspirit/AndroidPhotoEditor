@@ -86,7 +86,11 @@ class EditingToolsAdapter(private val mOnItemSelected: OnItemSelected) :
 
     fun addTool(tool: String) {
         when (tool) {
-            "pointer" -> mToolList.add(ToolModel(R.drawable.zl_select, R.drawable.zl_select_selected, ToolType.POINTER))
+            "pointer" -> {
+                if (mToolList.none { it.mToolType == ToolType.POINTER }) {
+                    mToolList.add(ToolModel(R.drawable.zl_select, R.drawable.zl_select_selected, ToolType.POINTER))
+                }
+            }
             "shape" -> mToolList.add(ToolModel( R.drawable.ic_shape, R.drawable.zl_shape_selected, ToolType.SHAPE))
             "clip" -> mToolList.add(ToolModel(R.drawable.ic_crop, R.drawable.zl_clip_selected, ToolType.CLIP))
             "text" -> mToolList.add(ToolModel(R.drawable.ic_text, R.drawable.zl_textsticker_selected, ToolType.TEXT))
@@ -110,6 +114,7 @@ class EditingToolsAdapter(private val mOnItemSelected: OnItemSelected) :
     }
 
     init {
-        selectedTool = ToolType.POINTER // Set tool default
+        selectedTool = ToolType.POINTER
+        mToolList.add(ToolModel(R.drawable.zl_select, R.drawable.zl_select_selected, ToolType.POINTER))
     }
 }

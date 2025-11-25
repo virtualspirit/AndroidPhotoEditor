@@ -2,6 +2,7 @@ package ja.burhanrashid52.photoediting
 
 import android.annotation.SuppressLint
 import android.app.Dialog
+import android.content.DialogInterface
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
@@ -27,6 +28,7 @@ import ja.burhanrashid52.photoeditor.R
 class StickerBSFragment : BottomSheetDialogFragment() {
     private var mStickerListener: StickerListener? = null
     private var stickerPathList: Array<String> = DEFAULT_STICKER_PATHS
+    private var selectionMade: Boolean = false
     
     fun setStickerListener(stickerListener: StickerListener?) {
         mStickerListener = stickerListener
@@ -42,6 +44,7 @@ class StickerBSFragment : BottomSheetDialogFragment() {
 
     interface StickerListener {
         fun onStickerClick(bitmap: Bitmap)
+        fun onStickerSelectionCancelled()
     }
 
     private val mBottomSheetBehaviorCallback: BottomSheetCallback = object : BottomSheetCallback() {
@@ -52,6 +55,13 @@ class StickerBSFragment : BottomSheetDialogFragment() {
         }
 
         override fun onSlide(bottomSheet: View, slideOffset: Float) {}
+    }
+
+    override fun onDismiss(dialog: DialogInterface) {
+        super.onDismiss(dialog)
+        if (!selectionMade) {
+            mStickerListener?.onStickerSelectionCancelled()
+        }
     }
 
     @SuppressLint("RestrictedApi")
@@ -127,6 +137,7 @@ class StickerBSFragment : BottomSheetDialogFragment() {
                                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                                 .into(object : CustomTarget<Bitmap?>(256, 256) {
                                     override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap?>?) {
+                                        selectionMade = true
                                         mStickerListener!!.onStickerClick(resource)
                                     }
 

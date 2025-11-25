@@ -2,6 +2,7 @@ package ja.burhanrashid52.photoediting
 
 import android.annotation.SuppressLint
 import android.app.Dialog
+import android.content.DialogInterface
 import android.content.Context
 import android.util.Log // Import Log for error handling
 import android.view.LayoutInflater
@@ -21,6 +22,7 @@ import java.util.ArrayList
 class EmojiBSFragment : BottomSheetDialogFragment() {
 
     private var mEmojiListener: EmojiListener? = null
+    private var selectionMade: Boolean = false
 
     // 1. Declare emojisList as a member variable of the Fragment instance
     // Use lateinit as it will be initialized in setupDialog before use.
@@ -28,6 +30,7 @@ class EmojiBSFragment : BottomSheetDialogFragment() {
 
     interface EmojiListener {
         fun onEmojiClick(emojiUnicode: String)
+        fun onEmojiSelectionCancelled()
     }
 
     private val mBottomSheetBehaviorCallback: BottomSheetCallback = object : BottomSheetCallback() {
@@ -38,6 +41,13 @@ class EmojiBSFragment : BottomSheetDialogFragment() {
         }
 
         override fun onSlide(bottomSheet: View, slideOffset: Float) {}
+    }
+
+    override fun onDismiss(dialog: DialogInterface) {
+        super.onDismiss(dialog)
+        if (!selectionMade) {
+            mEmojiListener?.onEmojiSelectionCancelled()
+        }
     }
 
     @SuppressLint("RestrictedApi")
@@ -115,6 +125,7 @@ class EmojiBSFragment : BottomSheetDialogFragment() {
                     if (adapterPosition != RecyclerView.NO_POSITION) {
                         if (mEmojiListener != null) {
                             // Accesses EmojiBSFragment's emojisList and mEmojiListener
+                            selectionMade = true
                             mEmojiListener?.onEmojiClick(emojisList[adapterPosition])
                         }
                         dismiss() // Dismiss the fragment

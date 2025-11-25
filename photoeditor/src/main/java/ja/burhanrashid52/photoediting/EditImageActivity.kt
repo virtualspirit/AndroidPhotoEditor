@@ -705,11 +705,21 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     override fun onEmojiClick(emojiUnicode: String) {
         mPhotoEditor.addEmoji(emojiUnicode)
         mTxtCurrentTool.setText(R.string.label_emoji)
+        mEditingToolsAdapter.selectTool(ToolType.POINTER)
+    }
+
+    override fun onEmojiSelectionCancelled() {
+        mEditingToolsAdapter.selectTool(ToolType.POINTER)
     }
 
     override fun onStickerClick(bitmap: Bitmap) {
         mPhotoEditor.addImage(bitmap)
         mTxtCurrentTool.setText(R.string.label_sticker)
+        mEditingToolsAdapter.selectTool(ToolType.POINTER)
+    }
+
+    override fun onStickerSelectionCancelled() {
+        mEditingToolsAdapter.selectTool(ToolType.POINTER)
     }
 
     @SuppressLint("MissingPermission")
