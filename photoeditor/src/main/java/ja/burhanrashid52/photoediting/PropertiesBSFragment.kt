@@ -13,6 +13,7 @@ import ja.burhanrashid52.photoeditor.R
 
 class PropertiesBSFragment : BottomSheetDialogFragment(), SeekBar.OnSeekBarChangeListener {
     private var mProperties: Properties? = null
+    var customColors: IntArray? = null
 
     interface Properties {
         fun onColorChanged(colorCode: Int)
@@ -38,7 +39,13 @@ class PropertiesBSFragment : BottomSheetDialogFragment(), SeekBar.OnSeekBarChang
         val layoutManager = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
         rvColor.layoutManager = layoutManager
         rvColor.setHasFixedSize(true)
-        val colorPickerAdapter = activity?.let { ColorPickerAdapter(it) }
+        val colorPickerAdapter = activity?.let {
+            val colors = customColors
+            if (colors != null && colors.isNotEmpty())
+                ColorPickerAdapter(it, colors.toList())
+            else
+                ColorPickerAdapter(it)
+        }
         colorPickerAdapter?.setOnColorPickerClickListener(object : ColorPickerAdapter.OnColorPickerClickListener {
             override fun onColorPickerClickListener(colorCode: Int) {
                 if (mProperties != null) {

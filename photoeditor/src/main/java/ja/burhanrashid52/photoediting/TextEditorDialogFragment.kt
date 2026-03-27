@@ -85,7 +85,11 @@ class TextEditorDialogFragment : DialogFragment(), SeekBar.OnSeekBarChangeListen
         val layoutManager = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
         addTextColorPickerRecyclerView.layoutManager = layoutManager
         addTextColorPickerRecyclerView.setHasFixedSize(true)
-        val colorPickerAdapter = ColorPickerAdapter(activity)
+        val customColors = arguments?.getIntArray(EXTRA_CUSTOM_COLORS)
+        val colorPickerAdapter = if (customColors != null && customColors.isNotEmpty())
+            ColorPickerAdapter(activity, customColors.toList())
+        else
+            ColorPickerAdapter(activity)
 
         //This listener will change the text color when clicked on any color from picker
         colorPickerAdapter.setOnColorPickerClickListener(object : OnColorPickerClickListener {
@@ -103,7 +107,10 @@ class TextEditorDialogFragment : DialogFragment(), SeekBar.OnSeekBarChangeListen
         backgroundColorPickerRecyclerView.layoutManager = backgroundColorLayoutManager
         backgroundColorPickerRecyclerView.setHasFixedSize(true)
 
-        val backgroundColorPickerAdapter = ColorPickerAdapter(activity, true) // Tambahkan flag untuk warna transparan
+        val backgroundColorPickerAdapter = if (customColors != null && customColors.isNotEmpty())
+            ColorPickerAdapter(activity, customColors.toList().let { listOf(android.graphics.Color.TRANSPARENT) + it })
+        else
+            ColorPickerAdapter(activity, true)
 
         backgroundColorPickerAdapter.setOnColorPickerClickListener(object : OnColorPickerClickListener {
             override fun onColorPickerClickListener(colorCode: Int) {
@@ -119,13 +126,17 @@ class TextEditorDialogFragment : DialogFragment(), SeekBar.OnSeekBarChangeListen
         val arguments = requireArguments()
 
         mAddTextEditText.setText(arguments.getString(EXTRA_INPUT_TEXT))
-        mTextColor  = arguments.getInt(EXTRA_COLOR_CODE)
+        mTextColor = arguments.getInt(EXTRA_COLOR_CODE)
         mBackgroundColor = arguments.getInt(EXTRA_BACKGROUND_COLOR_CODE, Color.TRANSPARENT)
         mTextSize = arguments.getFloat(EXTRA_TEXT_SIZE, 36f)
         mAddTextEditText.setTextColor(mTextColor)
         mAddTextEditText.setBackgroundColor(mBackgroundColor)
         mAddTextEditText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, mTextSize)
         sbFontSize.progress = (mTextSize - MIN_TEXT_SIZE).toInt()
+        arguments.getString(EXTRA_FONT_FAMILY)?.let { family ->
+            val typeface = try { Typeface.create(family, Typeface.NORMAL) } catch (_: Exception) { null }
+            if (typeface != null) mAddTextEditText.typeface = typeface
+        }
         mInputMethodManager.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
 
         //Make a callback on activity when user is done with text editing
@@ -168,22 +179,28 @@ class TextEditorDialogFragment : DialogFragment(), SeekBar.OnSeekBarChangeListen
         const val EXTRA_COLOR_CODE = "extra_color_code"
         const val EXTRA_BACKGROUND_COLOR_CODE = "extra_background_color_code"
         const val EXTRA_TEXT_SIZE = "extra_text_size"
+        const val EXTRA_CUSTOM_COLORS = "extra_custom_colors"
+        const val EXTRA_FONT_FAMILY = "extra_font_family"
 
-        //Show dialog with provide text and text color
-        //Show dialog with default text input as empty and text color white
         @JvmOverloads
         fun show(
             appCompatActivity: AppCompatActivity,
             inputText: String = "",
             @ColorInt colorCode: Int = ContextCompat.getColor(appCompatActivity, R.color.white),
             @ColorInt backgroundColor: Int = Color.TRANSPARENT,
-            textSize: Float = 36f
+            textSize: Float = 36f,
+            customColors: IntArray? = null,
+            defaultTextColor: Int? = null,
+            defaultFontFamily: String? = null,
+            defaultFontSize: Float? = null
         ): TextEditorDialogFragment {
             val args = Bundle()
             args.putString(EXTRA_INPUT_TEXT, inputText)
-            args.putInt(EXTRA_COLOR_CODE, colorCode)
+            args.putInt(EXTRA_COLOR_CODE, defaultTextColor ?: colorCode)
             args.putInt(EXTRA_BACKGROUND_COLOR_CODE, backgroundColor)
-            args.putFloat(EXTRA_TEXT_SIZE, textSize)
+            args.putFloat(EXTRA_TEXT_SIZE, defaultFontSize ?: textSize)
+            if (customColors != null) args.putIntArray(EXTRA_CUSTOM_COLORS, customColors)
+            if (defaultFontFamily != null) args.putString(EXTRA_FONT_FAMILY, defaultFontFamily)
             val fragment = TextEditorDialogFragment()
             fragment.arguments = args
             fragment.show(appCompatActivity.supportFragmentManager, TAG)

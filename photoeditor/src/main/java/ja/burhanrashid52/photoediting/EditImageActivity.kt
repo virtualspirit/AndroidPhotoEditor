@@ -83,6 +83,10 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     private lateinit var mPropertiesBSFragment: PropertiesBSFragment
     private lateinit var mShapeBSFragment: ShapeBSFragment
     private val mShapeBuilder = ShapeBuilder()
+    private var customColors: IntArray? = null
+    private var defaultTextColor: Int? = null
+    private var defaultFontFamily: String? = null
+    private var defaultFontSize: Float? = null
     private lateinit var mEmojiBSFragment: EmojiBSFragment
     private lateinit var mStickerBSFragment: StickerBSFragment
     private lateinit var mTxtCurrentTool: TextView
@@ -207,6 +211,55 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         }
 
         initTools(tools)
+
+        // Apply default stroke configuration from intent extras
+        val defaultStrokeColorHex = value?.getString("defaultStrokeColor")
+        val defaultStrokeWidthStr = value?.getString("defaultStrokeWidth") ?: "medium"
+        val defaultStrokeStyleStr = value?.getString("defaultStrokeStyle") ?: "solid"
+        val defaultColorsHex = value?.getStringArray("defaultColors")
+        val defaultTextColorHex = value?.getString("defaultTextColor")
+        val defaultFontFamily = value?.getString("defaultFontFamily")
+        val defaultFontSize = if (value?.containsKey("defaultFontSize") == true) value.getFloat("defaultFontSize") else null
+
+        val defaultStrokeWidthValue = when (defaultStrokeWidthStr) {
+            "small" -> TopPaletteDialogFragment.STROKE_SMALL
+            "large" -> TopPaletteDialogFragment.STROKE_LARGE
+            else -> TopPaletteDialogFragment.STROKE_MEDIUM
+        }
+        mShapeBuilder.withShapeSize(defaultStrokeWidthValue)
+
+        if (defaultStrokeColorHex != null) {
+            try {
+                mShapeBuilder.withShapeColor(Color.parseColor(defaultStrokeColorHex))
+            } catch (e: Exception) {
+                Log.e(TAG, "Invalid defaultStrokeColor: $defaultStrokeColorHex")
+            }
+        }
+
+        val defaultStrokeStyle = when (defaultStrokeStyleStr) {
+            "dashed" -> StrokeStyle.DASHED
+            "dotted" -> StrokeStyle.DOTTED
+            else -> StrokeStyle.SOLID
+        }
+        mShapeBuilder.withStrokeStyle(defaultStrokeStyle)
+
+        if (defaultColorsHex != null && defaultColorsHex.isNotEmpty()) {
+            val parsed = defaultColorsHex.mapNotNull { hex ->
+                try { Color.parseColor(hex) } catch (e: Exception) { null }
+            }
+            if (parsed.isNotEmpty()) {
+                customColors = parsed.toIntArray()
+                mPropertiesBSFragment.customColors = customColors
+            }
+        }
+
+        defaultTextColorHex?.let {
+            try { defaultTextColor = Color.parseColor(it) } catch (_: Exception) {}
+        }
+        defaultFontFamily?.let { this.defaultFontFamily = it }
+        defaultFontSize?.let { this.defaultFontSize = it }
+
+        mPhotoEditor.setShape(mShapeBuilder)
 
         if (path != null) {
             Glide.with(this)
@@ -409,7 +462,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
 
         Log.d("TextGraphicDebug", "Listener in Activity received: text='$text', view hash=${rootView.hashCode()}")
 
-        val textEditorDialogFragment = TextEditorDialogFragment.show(this, text, colorCode, backgroundColor, currentTextSize)
+        val textEditorDialogFragment = TextEditorDialogFragment.show(this, text, colorCode, backgroundColor, currentTextSize, customColors, defaultTextColor, defaultFontFamily, defaultFontSize)
         textEditorDialogFragment.setOnTextEditorListener(object :
             TextEditorDialogFragment.TextEditorListener {
             override fun onDone(inputText: String, textColor: Int, backgroundColor: Int, textSize: Float) {
@@ -509,7 +562,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
                 val currentStyle = mPhotoEditor.getSelectedViewStrokeStyle()
                     ?: StrokeStyle.SOLID
 
-                val topSheet = TopPaletteDialogFragment.newInstance(currentStroke, currentStyle)
+                val topSheet = TopPaletteDialogFragment.newInstance(currentStroke, currentStyle, customColors)
                 topSheet.setOnColorSelectListener { color ->
                     mPhotoEditor.changeSelectedViewColor(color)
                 }
@@ -772,7 +825,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
             }
 
             ToolType.TEXT -> {
-                val textEditorDialogFragment = TextEditorDialogFragment.show(this)
+                val textEditorDialogFragment = TextEditorDialogFragment.show(this, customColors = customColors, defaultTextColor = defaultTextColor, defaultFontFamily = defaultFontFamily, defaultFontSize = defaultFontSize)
                 textEditorDialogFragment.setOnTextEditorListener(object :
                     TextEditorDialogFragment.TextEditorListener {
                     // Update signature onDone

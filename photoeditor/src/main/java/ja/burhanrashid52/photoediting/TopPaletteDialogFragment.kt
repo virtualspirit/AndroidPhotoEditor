@@ -32,15 +32,18 @@ class TopPaletteDialogFragment : DialogFragment() {
         const val STROKE_LARGE = 50f
 
         private const val ARG_CURRENT_STROKE_STYLE = "current_stroke_style"
+        private const val ARG_CUSTOM_COLORS = "custom_colors"
 
         fun newInstance(
             currentStrokeWidth: Float?,
-            currentStrokeStyle: StrokeStyle? // Parameter baru
+            currentStrokeStyle: StrokeStyle?,
+            customColors: IntArray? = null
         ): TopPaletteDialogFragment {
             val fragment = TopPaletteDialogFragment()
             val args = Bundle()
             currentStrokeWidth?.let { args.putFloat(ARG_CURRENT_STROKE_WIDTH, it) }
             currentStrokeStyle?.let { args.putString(ARG_CURRENT_STROKE_STYLE, it.name) }
+            customColors?.let { args.putIntArray(ARG_CUSTOM_COLORS, it) }
             fragment.arguments = args
             return fragment
         }
@@ -74,8 +77,13 @@ class TopPaletteDialogFragment : DialogFragment() {
         rvColor.layoutManager = layoutManager
         rvColor.setHasFixedSize(true)
 
-        // Kita bisa menggunakan kembali ColorPickerAdapter yang sudah ada!
-        val colorPickerAdapter = ColorPickerAdapter(requireContext())
+        // Use custom colors if provided, otherwise fall back to defaults
+        val customColors = arguments?.getIntArray(ARG_CUSTOM_COLORS)
+        val colorPickerAdapter = if (customColors != null && customColors.isNotEmpty()) {
+            ColorPickerAdapter(requireContext(), customColors.toList())
+        } else {
+            ColorPickerAdapter(requireContext())
+        }
         colorPickerAdapter.setOnColorPickerClickListener(object : ColorPickerAdapter.OnColorPickerClickListener {
             override fun onColorPickerClickListener(colorCode: Int) {
                 // Panggil listener dan tutup sheet
