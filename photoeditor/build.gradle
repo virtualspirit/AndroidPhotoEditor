@@ -3,7 +3,7 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-kapt'
 
 android {
-    namespace 'ja.burhanrashid52.photoeditor'
+    namespace 'com.virtualspirit.photoeditor'
     compileSdkVersion 34
 
     defaultConfig {
@@ -73,8 +73,8 @@ dependencies {
 }
 
 ext {
-    PUBLISH_GROUP_ID = 'com.burhanrashid52'
-    PUBLISH_VERSION = '3.0.2'
+    PUBLISH_GROUP_ID = 'com.virtualspirit'
+    PUBLISH_VERSION = '3.0.6'
     PUBLISH_ARTIFACT_ID = 'photoeditor'
 }
 
