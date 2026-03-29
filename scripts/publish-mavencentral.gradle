@@ -120,5 +120,6 @@ nexusStaging {
 }
 
 signing {
+    required { ext["signing.keyId"]?.trim() }
     sign publishing.publications
 }
