@@ -209,32 +209,24 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
             "square",
             "circle", "pointer")
 
-        value?.getStringArray("tools")?.let {
-            tools = it
-        }
-        
-        // Get custom sticker paths from intent if provided
-        value?.getStringArray("stickerPaths")?.let { customStickers ->
-            stickerPaths = customStickers
-        }
+        value?.getStringArray("tools")?.let { tools = it }
+        value?.getStringArray("stickerPaths")?.let { stickerPaths = it }
 
-        initTools(tools)
-
-        // Apply default stroke configuration from intent extras
+        // Parse and apply all defaults BEFORE initTools so setupShapePanel
+        // sees the correct mShapeBuilder state and customColors.
         val defaultStrokeColorHex = value?.getString("defaultStrokeColor")
         val defaultStrokeWidthStr = value?.getString("defaultStrokeWidth") ?: "medium"
         val defaultStrokeStyleStr = value?.getString("defaultStrokeStyle") ?: "solid"
         val defaultColorsHex = value?.getStringArray("defaultColors")
-        val defaultTextColorHex = value?.getString("defaultTextStickerColor")
-        val defaultFontFamily = value?.getString("defaultTextStickerFontFamily")
-        val defaultFontSize = if (value?.containsKey("defaultTextStickerSize") == true) value.getFloat("defaultTextStickerSize") else null
+        val defaultTextColorHex = value?.getString("defaultTextColor")
+        val defaultFontFamilyStr = value?.getString("defaultFontFamily")
+        val defaultFontSizeVal = if (value?.containsKey("defaultFontSize") == true) value.getFloat("defaultFontSize") else null
 
-        val defaultStrokeWidthValue = when (defaultStrokeWidthStr) {
+        mShapeBuilder.withShapeSize(when (defaultStrokeWidthStr) {
             "small" -> TopPaletteDialogFragment.STROKE_SMALL
             "large" -> TopPaletteDialogFragment.STROKE_LARGE
             else -> TopPaletteDialogFragment.STROKE_MEDIUM
-        }
-        mShapeBuilder.withShapeSize(defaultStrokeWidthValue)
+        })
 
         if (defaultStrokeColorHex != null) {
             try {
@@ -244,12 +236,11 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
             }
         }
 
-        val defaultStrokeStyle = when (defaultStrokeStyleStr) {
+        mShapeBuilder.withStrokeStyle(when (defaultStrokeStyleStr) {
             "dashed" -> StrokeStyle.DASHED
             "dotted" -> StrokeStyle.DOTTED
             else -> StrokeStyle.SOLID
-        }
-        mShapeBuilder.withStrokeStyle(defaultStrokeStyle)
+        })
 
         if (defaultColorsHex != null && defaultColorsHex.isNotEmpty()) {
             val parsed = defaultColorsHex.mapNotNull { hex ->
@@ -264,11 +255,11 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         defaultTextColorHex?.let {
             try { defaultTextColor = Color.parseColor(it) } catch (_: Exception) {}
         }
-        defaultFontFamily?.let { this.defaultFontFamily = it }
-        defaultFontSize?.let { this.defaultFontSize = it }
+        defaultFontFamilyStr?.let { this.defaultFontFamily = it }
+        defaultFontSizeVal?.let { this.defaultFontSize = it }
 
+        initTools(tools)
         setupStickerPanel()
-
         mPhotoEditor.setShape(mShapeBuilder)
 
         if (path != null) {
@@ -1026,8 +1017,10 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         val rvColor: RecyclerView = panelShape.findViewById(R.id.shapeColors)
         rvColor.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         rvColor.setHasFixedSize(true)
-        val colorAdapter = ColorPickerAdapter(this, false, 2)
-        onColorChanged(ContextCompat.getColor(this, R.color.red_color_picker))
+        val colorList = customColors?.toList()
+            ?: ColorPickerAdapter.getDefaultColors(this, false)
+        val colorAdapter = ColorPickerAdapter(this, colorList)
+        colorAdapter.setSelectedColor(mShapeBuilder.shapeColor)
         colorAdapter.setOnColorPickerClickListener(object : ColorPickerAdapter.OnColorPickerClickListener {
             override fun onColorPickerClickListener(colorCode: Int) {
                 onColorChanged(colorCode)
