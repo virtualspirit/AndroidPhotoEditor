@@ -62,7 +62,7 @@ publishing {
 
             // Two artifacts, the `aar` (or `jar`) and the sources
             if (project.plugins.findPlugin("com.android.library")) {
-                artifact(tasks.named("bundleReleaseAar"))
+                artifact("$buildDir/outputs/aar/${project.getName()}-release.aar")
             } else {
                 artifact("$buildDir/libs/${project.getName()}-${version}.jar")
             }
@@ -122,5 +122,17 @@ nexusStaging {
 if (ext["signing.keyId"]?.trim()) {
     signing {
         sign publishing.publications
+    }
+}
+
+// Ensure AAR is built before publishing to local Maven
+afterEvaluate {
+    if (project.plugins.findPlugin("com.android.library")) {
+        tasks.withType(PublishToMavenRepository).configureEach { task ->
+            task.dependsOn("bundleReleaseAar")
+        }
+        tasks.withType(PublishToMavenLocal).configureEach { task ->
+            task.dependsOn("bundleReleaseAar")
+        }
     }
 }
