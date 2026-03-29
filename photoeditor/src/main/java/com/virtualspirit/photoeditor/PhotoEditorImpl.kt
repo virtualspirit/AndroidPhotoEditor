@@ -639,6 +639,17 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
         return viewState.currentSelectedView != null
     }
 
+    override fun isSelectedViewColorEditable(): Boolean {
+        val view = viewState.currentSelectedView ?: return false
+        val type = viewTypeFromTag(view)
+        return type == ViewType.SHAPE || type == ViewType.BRUSH_DRAWING
+    }
+
+    override fun getSelectedViewColor(): Int? {
+        val view = viewState.currentSelectedView ?: return null
+        return view.findViewById<ShapeView>(R.id.shape_view)?.getCurrentColor()
+    }
+
     override fun onTransform(view: View, oldTransform: ViewTransform, newTransform: ViewTransform) {
         mGraphicManager.pushTransformAction(view, oldTransform, newTransform)
         (context as? EditImageActivity)?.updateActionButtonsState()

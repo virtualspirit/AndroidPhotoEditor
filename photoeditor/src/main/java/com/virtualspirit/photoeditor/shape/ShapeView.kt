@@ -50,7 +50,7 @@ class ShapeView @JvmOverloads constructor(
         }
 
         currentStyle = builder.shapeStyle
-        applyPathEffect()
+        applyPathEffect(paint.strokeWidth)
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -61,11 +61,9 @@ class ShapeView @JvmOverloads constructor(
 //        }
         super.onDraw(canvas)
         shapePath?.let {
-            // --- LOGIKA BARU YANG MENGGUNAKAN parentScale ---
-            // Pastikan tidak ada division by zero
             val currentScale = if (parentScale > 0) parentScale else 1.0f
             paint.strokeWidth = desiredStrokeWidth / currentScale
-
+            applyPathEffect(paint.strokeWidth)
             canvas.drawPath(it, paint)
         }
     }
@@ -100,7 +98,8 @@ class ShapeView @JvmOverloads constructor(
 
     fun updateStrokeStyle(newStyle: StrokeStyle) {
         currentStyle = newStyle
-        applyPathEffect()
+        val currentScale = if (parentScale > 0) parentScale else 1.0f
+        applyPathEffect(desiredStrokeWidth / currentScale)
         invalidate()
     }
 
@@ -112,11 +111,14 @@ class ShapeView @JvmOverloads constructor(
         return shapePath
     }
 
-    private fun applyPathEffect() {
+    private fun applyPathEffect(strokeWidth: Float) {
+        val w = strokeWidth.coerceAtLeast(1f)
+        // With ROUND cap: visual dash length = on + w, visual gap = off - w
+        // off = w * 3f → visual gap = 2w at every stroke size
         paint.pathEffect = when (currentStyle) {
-            StrokeStyle.DASHED -> DashPathEffect(floatArrayOf(30f, 20f), 0f) // interval on, off
-            StrokeStyle.DOTTED -> DashPathEffect(floatArrayOf(5f, 15f), 0f)  // interval on, off
-            StrokeStyle.SOLID -> null // Hapus efek
+            StrokeStyle.DASHED -> DashPathEffect(floatArrayOf(w * 2.5f, w * 3f), 0f)
+            StrokeStyle.DOTTED -> DashPathEffect(floatArrayOf(1f, w * 3.5f), 0f)
+            StrokeStyle.SOLID -> null
         }
     }
 }

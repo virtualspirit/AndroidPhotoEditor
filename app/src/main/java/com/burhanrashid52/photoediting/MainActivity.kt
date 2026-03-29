@@ -8,8 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import ja.burhanrashid52.photoediting.EditImageActivity
-import ja.burhanrashid52.photoediting.constant.ResponseCode
+import com.virtualspirit.photoediting.EditImageActivity
 
 class MainActivity : AppCompatActivity() {
     private val EDIT_SUCCESSFUL = 1
@@ -28,7 +27,7 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(applicationContext, EditImageActivity::class.java)
 
 
-            intent.putExtra("path", "https://virtualspirit.me/assets/front-end/software-development@2x-93c79cac29e995da260cb38bafb3fc19b8d5307ac7f4c719d62c658a004ba701.png")
+            intent.putExtra("path", "https://virtualspirit.me/assets/front-end/software-development@2x-63d8a577788a46fd1986b0b5aa26e3ebf33fa7d729cb0778268ecd4e776059f9.png")
             val tools = arrayOf("line", "circle", "clip", "filter", "imageSticker", "textSticker")
             intent.putExtra("tools", tools)
             

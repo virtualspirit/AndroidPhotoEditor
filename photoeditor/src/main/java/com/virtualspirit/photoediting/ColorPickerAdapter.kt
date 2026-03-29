@@ -75,6 +75,16 @@ class ColorPickerAdapter internal constructor(
         this.onColorPickerClickListener = onColorPickerClickListener
     }
 
+    fun setSelectedColor(color: Int) {
+        val pos = colorPickerColors.indexOf(color)
+        if (pos >= 0 && pos != selectedPosition) {
+            val old = selectedPosition
+            selectedPosition = pos
+            notifyItemChanged(old)
+            notifyItemChanged(pos)
+        }
+    }
+
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         var colorPickerView: View = itemView.findViewById(R.id.color_picker_view)
         var transparentPickerView: View = itemView.findViewById(R.id.transparent_picker_view)

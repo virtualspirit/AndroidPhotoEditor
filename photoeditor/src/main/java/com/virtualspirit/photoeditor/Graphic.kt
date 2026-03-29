@@ -70,12 +70,16 @@ abstract class Graphic(
         val boxHelper = BoxHelper(photoEditorView, viewState)
         return object : OnGestureControl {
             override fun onClick(view: View) {
+                // Resolve the graphic that owns the tapped view from its tag.
+                // The tag is set in setupRemoveView() as Pair(viewType, graphic).
+                // Without this, the shared mMultiTouchListener always runs the
+                // last-created graphic's closure, selecting the wrong view.
+                val tagData = view.tag as? Pair<*, *>
+                val tappedGraphic = tagData?.second as? Graphic ?: return
                 boxHelper.clearHelperBox()
-                toggleSelection(true)
-                // Change the in-focus view
-                viewState.currentSelectedView = rootView
-                updateView(view)
-
+                tappedGraphic.toggleSelection(true)
+                viewState.currentSelectedView = tappedGraphic.rootView
+                tappedGraphic.updateView(view)
             }
 
             override fun onLongClick(view: View) {

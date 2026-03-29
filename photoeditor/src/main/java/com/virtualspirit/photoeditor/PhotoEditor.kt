@@ -373,6 +373,8 @@ interface PhotoEditor {
 
     fun deleteSelectedView(): Boolean
     fun isAnyViewSelected(): Boolean
+    fun isSelectedViewColorEditable(): Boolean
+    fun getSelectedViewColor(): Int?
     fun onStopViewChangeListener(viewType: ViewType)
     fun duplicateSelectedView(): Boolean
 

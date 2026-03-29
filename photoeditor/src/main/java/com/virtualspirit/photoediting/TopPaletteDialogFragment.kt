@@ -7,7 +7,6 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.Window
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import androidx.fragment.app.DialogFragment
@@ -24,6 +23,7 @@ class TopPaletteDialogFragment : DialogFragment() {
     private var colorSelectListener: ((Int) -> Unit)? = null
     private var strokeWidthSelectListener: ((Float) -> Unit)? = null
     private var strokeStyleSelectListener: ((StrokeStyle) -> Unit)? = null
+    private var dismissListener: (() -> Unit)? = null
 
     companion object {
         private const val ARG_CURRENT_STROKE_WIDTH = "current_stroke_width"
@@ -33,17 +33,20 @@ class TopPaletteDialogFragment : DialogFragment() {
 
         private const val ARG_CURRENT_STROKE_STYLE = "current_stroke_style"
         private const val ARG_CUSTOM_COLORS = "custom_colors"
+        private const val ARG_CURRENT_COLOR = "current_color"
 
         fun newInstance(
             currentStrokeWidth: Float?,
             currentStrokeStyle: StrokeStyle?,
-            customColors: IntArray? = null
+            customColors: IntArray? = null,
+            currentColor: Int? = null
         ): TopPaletteDialogFragment {
             val fragment = TopPaletteDialogFragment()
             val args = Bundle()
             currentStrokeWidth?.let { args.putFloat(ARG_CURRENT_STROKE_WIDTH, it) }
             currentStrokeStyle?.let { args.putString(ARG_CURRENT_STROKE_STYLE, it.name) }
             customColors?.let { args.putIntArray(ARG_CUSTOM_COLORS, it) }
+            currentColor?.let { args.putInt(ARG_CURRENT_COLOR, it) }
             fragment.arguments = args
             return fragment
         }
@@ -59,6 +62,15 @@ class TopPaletteDialogFragment : DialogFragment() {
 
     fun setOnStrokeStyleSelectListener(listener: (StrokeStyle) -> Unit) {
         this.strokeStyleSelectListener = listener
+    }
+
+    fun setOnDismissListener(listener: () -> Unit) {
+        this.dismissListener = listener
+    }
+
+    override fun onDismiss(dialog: android.content.DialogInterface) {
+        super.onDismiss(dialog)
+        dismissListener?.invoke()
     }
 
     override fun onCreateView(
@@ -77,18 +89,20 @@ class TopPaletteDialogFragment : DialogFragment() {
         rvColor.layoutManager = layoutManager
         rvColor.setHasFixedSize(true)
 
-        // Use custom colors if provided, otherwise fall back to defaults
         val customColors = arguments?.getIntArray(ARG_CUSTOM_COLORS)
         val colorPickerAdapter = if (customColors != null && customColors.isNotEmpty()) {
             ColorPickerAdapter(requireContext(), customColors.toList())
         } else {
             ColorPickerAdapter(requireContext())
         }
+        // Pre-select the current shape's color if provided
+        arguments?.getInt(ARG_CURRENT_COLOR, Int.MIN_VALUE)
+            ?.takeIf { it != Int.MIN_VALUE }
+            ?.let { colorPickerAdapter.setSelectedColor(it) }
         colorPickerAdapter.setOnColorPickerClickListener(object : ColorPickerAdapter.OnColorPickerClickListener {
             override fun onColorPickerClickListener(colorCode: Int) {
-                // Panggil listener dan tutup sheet
                 colorSelectListener?.invoke(colorCode)
-                dismiss()
+                // No dismiss — stays open so user can draw immediately
             }
         })
         rvColor.adapter = colorPickerAdapter
@@ -103,7 +117,7 @@ class TopPaletteDialogFragment : DialogFragment() {
         when (currentStrokeWidth) {
             STROKE_SMALL -> rbSmall.isChecked = true
             STROKE_LARGE -> rbLarge.isChecked = true
-            else -> rbMedium.isChecked = true // Default
+            else -> rbMedium.isChecked = true
         }
 
         rgStrokeWidth.setOnCheckedChangeListener { _, checkedId ->

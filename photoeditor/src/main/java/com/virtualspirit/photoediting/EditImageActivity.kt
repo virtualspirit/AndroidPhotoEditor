@@ -40,11 +40,20 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.transition.ChangeBounds
 import androidx.transition.TransitionManager
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import android.widget.ProgressBar
+import android.widget.RadioButton
+import android.widget.RadioGroup
+import androidx.recyclerview.widget.GridLayoutManager
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.target.Target
+import com.bumptech.glide.request.transition.Transition
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.yalantis.ucrop.UCrop
 import com.yalantis.ucrop.UCrop.*
@@ -81,14 +90,15 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     lateinit var mPhotoEditor: PhotoEditor
     private lateinit var mPhotoEditorView: PhotoEditorView
     private lateinit var mPropertiesBSFragment: PropertiesBSFragment
-    private lateinit var mShapeBSFragment: ShapeBSFragment
+    private lateinit var panelShape: View
+    private val shapeToolsList = mutableListOf<String>()
+    private var isShapePanelReady = false
     private val mShapeBuilder = ShapeBuilder()
     private var customColors: IntArray? = null
     private var defaultTextColor: Int? = null
     private var defaultFontFamily: String? = null
     private var defaultFontSize: Float? = null
     private lateinit var mEmojiBSFragment: EmojiBSFragment
-    private lateinit var mStickerBSFragment: StickerBSFragment
     private lateinit var mTxtCurrentTool: TextView
     private lateinit var mWonderFont: Typeface
     private lateinit var mRvTools: RecyclerView
@@ -98,6 +108,8 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     private lateinit var mImgDelete: View
     private lateinit var mImgDuplicate: View
     private lateinit var mImgPalette: View
+    private lateinit var panelSticker: View
+    private var stickerPaths: Array<String> = emptyArray()
     private val mEditingToolsAdapter = EditingToolsAdapter(this)
     private val mFilterViewAdapter = FilterViewAdapter(this)
     private lateinit var mRootView: ConstraintLayout
@@ -159,12 +171,8 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
 
         mPropertiesBSFragment = PropertiesBSFragment()
         mEmojiBSFragment = EmojiBSFragment()
-        mStickerBSFragment = StickerBSFragment()
-        mShapeBSFragment = ShapeBSFragment()
-        mStickerBSFragment.setStickerListener(this)
         mEmojiBSFragment.setEmojiListener(this)
         mPropertiesBSFragment.setPropertiesChangeListener(this)
-        mShapeBSFragment.setPropertiesChangeListener(this)
 
         val llmTools = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         mRvTools.layoutManager = llmTools
@@ -207,7 +215,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         
         // Get custom sticker paths from intent if provided
         value?.getStringArray("stickerPaths")?.let { customStickers ->
-            mStickerBSFragment.setStickerPaths(customStickers)
+            stickerPaths = customStickers
         }
 
         initTools(tools)
@@ -258,6 +266,8 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         }
         defaultFontFamily?.let { this.defaultFontFamily = it }
         defaultFontSize?.let { this.defaultFontSize = it }
+
+        setupStickerPanel()
 
         mPhotoEditor.setShape(mShapeBuilder)
 
@@ -337,10 +347,10 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     fun updateActionButtonsState() {
         mImgUndo.isEnabled = mPhotoEditor.isUndoAvailable
         mImgRedo.isEnabled = mPhotoEditor.isRedoAvailable
-
-        mImgDelete.isEnabled =  mPhotoEditor.isAnyViewSelected()
-        mImgDuplicate.isEnabled =  mPhotoEditor.isAnyViewSelected()
-//        mImgPalette.isEnabled =  mPhotoEditor.isAnyViewSelected()
+        val hasSelection = mPhotoEditor.isAnyViewSelected()
+        mImgDelete.isEnabled = hasSelection
+        mImgDuplicate.isEnabled = hasSelection
+        mImgPalette.isEnabled = mPhotoEditor.isSelectedViewColorEditable()
     }
 
     private fun handleIntentImage(source: ImageView) {
@@ -412,6 +422,9 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
 
         val imgShare: ImageView = findViewById(R.id.imgShare)
         imgShare.setOnClickListener(this)
+
+        panelShape = findViewById(R.id.panelShape)
+        panelSticker = findViewById(R.id.panelSticker)
     }
 
     private fun initTools(tools: Array<String>)  {
@@ -421,22 +434,13 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         if ("draw" in tools || "line" in tools || "square" in tools || "circle" in tools || "arrow" in tools) {
             mEditingToolsAdapter.addTool("shape")
 
-            // handle display shape here
-            if ("draw" in tools) {
-                mShapeBSFragment.addShape("draw")
-            }
-            if ("line" in tools) {
-                mShapeBSFragment.addShape("line")
-            }
-            if ("arrow" in tools) {
-                mShapeBSFragment.addShape("arrow")
-            }
-            if ("square" in tools) {
-                mShapeBSFragment.addShape("rect")
-            }
-            if ("circle" in tools) {
-                mShapeBSFragment.addShape("oval")
-            }
+            if ("draw" in tools) shapeToolsList.add("draw")
+            if ("line" in tools) shapeToolsList.add("line")
+            if ("arrow" in tools) shapeToolsList.add("arrow")
+            if ("square" in tools) shapeToolsList.add("rect")
+            if ("circle" in tools) shapeToolsList.add("oval")
+
+            setupShapePanel()
         }
 
         if ("clip" in tools) {
@@ -489,7 +493,10 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         )
 
         updateActionButtonsState()
-        mImgPalette.isEnabled = viewType == ViewType.BRUSH_DRAWING || viewType == ViewType.SHAPE
+
+        if (viewType == ViewType.SHAPE || viewType == ViewType.BRUSH_DRAWING) {
+            mEditingToolsAdapter.selectTool(ToolType.POINTER)
+        }
     }
 
     override fun onRemoveViewListener(viewType: ViewType, numberOfAddedViews: Int) {
@@ -499,15 +506,11 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         )
 
         updateActionButtonsState()
-        mImgPalette.isEnabled = viewType == ViewType.BRUSH_DRAWING || viewType == ViewType.SHAPE
     }
 
     override fun onStartViewChangeListener(viewType: ViewType) {
         Log.d(TAG, "onStartViewChangeListener() called with: viewType = [$viewType]")
-        mImgDelete.isEnabled = true
-        mImgDuplicate.isEnabled = true
-
-        mImgPalette.isEnabled = viewType == ViewType.BRUSH_DRAWING || viewType == ViewType.SHAPE
+        updateActionButtonsState()
     }
 
     override fun onStopViewChangeListener(viewType: ViewType) {
@@ -549,8 +552,8 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
                     ?: TopPaletteDialogFragment.STROKE_MEDIUM
                 val currentStyle = mPhotoEditor.getSelectedViewStrokeStyle()
                     ?: StrokeStyle.SOLID
-
-                val topSheet = TopPaletteDialogFragment.newInstance(currentStroke, currentStyle, customColors)
+                val currentColor = mPhotoEditor.getSelectedViewColor()
+                val topSheet = TopPaletteDialogFragment.newInstance(currentStroke, currentStyle, customColors, currentColor)
                 topSheet.setOnColorSelectListener { color ->
                     mPhotoEditor.changeSelectedViewColor(color)
                 }
@@ -559,6 +562,11 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
                 }
                 topSheet.setOnStrokeStyleSelectListener { style ->
                     mPhotoEditor.changeSelectedViewStrokeStyle(style)
+                }
+                topSheet.setOnDismissListener {
+                    mPhotoEditor.clearHelperBox()
+                    updateActionButtonsState()
+                    mEditingToolsAdapter.selectTool(ToolType.POINTER)
                 }
                 topSheet.show(supportFragmentManager, "ColorPickerTopSheet")
             }
@@ -797,6 +805,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     }
 
     override fun onToolSelected(toolType: ToolType) {
+        hideAllOverlayPanels()
 
         if (toolType != ToolType.SHAPE) {
             (mPhotoEditor as PhotoEditorImpl).exitAllDrawingModes()
@@ -806,9 +815,10 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
 
         when (toolType) {
             ToolType.SHAPE -> {
-                Log.d("DrawingView", "masuk")
+                mPhotoEditor.clearHelperBox()
+                updateActionButtonsState()
                 mTxtCurrentTool.setText(R.string.label_shape)
-                showBottomSheetDialogFragment(mShapeBSFragment)
+                panelShape.visibility = View.VISIBLE
                 showFilter(false)
             }
 
@@ -845,7 +855,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
 
             }
             ToolType.STICKER -> {
-                showBottomSheetDialogFragment(mStickerBSFragment)
+                panelSticker.visibility = View.VISIBLE
                 showFilter(false)
             }
             ToolType.CLIP -> {
@@ -910,6 +920,18 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         mConstraintSet.applyTo(mRootView)
     }
 
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        // Dismiss shape panel only when touch is on the canvas (above the panel)
+        if (ev.action == MotionEvent.ACTION_DOWN && panelShape.visibility == View.VISIBLE) {
+            val location = IntArray(2)
+            panelShape.getLocationOnScreen(location)
+            if (ev.rawY < location[1]) {
+                panelShape.visibility = View.GONE
+            }
+        }
+        return super.dispatchTouchEvent(ev)
+    }
+
     override fun onBackPressed() {
        if (!mPhotoEditor.isCacheEmpty) {
             showSaveDialog()
@@ -949,9 +971,139 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     }
 
     fun hideDeleteButton() {
-        mImgDelete.isEnabled = false
-        mImgDuplicate.isEnabled = false
-        mImgPalette.isEnabled = false
+        updateActionButtonsState()
+    }
+
+    private fun hideAllOverlayPanels() {
+        panelShape.visibility = View.GONE
+        panelSticker.visibility = View.GONE
+    }
+
+    private fun setupShapePanel() {
+        val brushBtn: RadioButton = panelShape.findViewById(R.id.brushRadioButton)
+        val lineBtn: RadioButton = panelShape.findViewById(R.id.lineRadioButton)
+        val arrowBtn: RadioButton = panelShape.findViewById(R.id.arrowRadioButton)
+        val ovalBtn: RadioButton = panelShape.findViewById(R.id.ovalRadioButton)
+        val rectBtn: RadioButton = panelShape.findViewById(R.id.rectRadioButton)
+        val shapeGroup: RadioGroup = panelShape.findViewById(R.id.shapeRadioGroup)
+
+        shapeGroup.setOnCheckedChangeListener(null)
+        shapeGroup.clearCheck()
+
+        shapeToolsList.forEachIndexed { index, tool ->
+            when (tool) {
+                "draw" -> { brushBtn.visibility = View.VISIBLE; if (index == 0) brushBtn.isChecked = true }
+                "line" -> { lineBtn.visibility = View.VISIBLE; if (index == 0) lineBtn.isChecked = true }
+                "arrow" -> { arrowBtn.visibility = View.VISIBLE; if (index == 0) arrowBtn.isChecked = true }
+                "rect" -> { rectBtn.visibility = View.VISIBLE; if (index == 0) rectBtn.isChecked = true }
+                "oval" -> { ovalBtn.visibility = View.VISIBLE; if (index == 0) ovalBtn.isChecked = true }
+            }
+        }
+
+        // Apply default shape type
+        shapeToolsList.firstOrNull()?.let { first ->
+            when (first) {
+                "draw" -> onShapePicked(ShapeType.Brush)
+                "line" -> onShapePicked(ShapeType.Line)
+                "arrow" -> onShapePicked(ShapeType.Arrow())
+                "rect" -> onShapePicked(ShapeType.Rectangle)
+                "oval" -> onShapePicked(ShapeType.Oval)
+            }
+        }
+
+        shapeGroup.setOnCheckedChangeListener { _, checkedId ->
+            if (!isShapePanelReady) return@setOnCheckedChangeListener
+            when (checkedId) {
+                R.id.brushRadioButton -> onShapePicked(ShapeType.Brush)
+                R.id.lineRadioButton -> onShapePicked(ShapeType.Line)
+                R.id.arrowRadioButton -> onShapePicked(ShapeType.Arrow())
+                R.id.ovalRadioButton -> onShapePicked(ShapeType.Oval)
+                R.id.rectRadioButton -> onShapePicked(ShapeType.Rectangle)
+                else -> onShapePicked(ShapeType.Brush)
+            }
+        }
+
+        val rvColor: RecyclerView = panelShape.findViewById(R.id.shapeColors)
+        rvColor.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        rvColor.setHasFixedSize(true)
+        val colorAdapter = ColorPickerAdapter(this, false, 2)
+        onColorChanged(ContextCompat.getColor(this, R.color.red_color_picker))
+        colorAdapter.setOnColorPickerClickListener(object : ColorPickerAdapter.OnColorPickerClickListener {
+            override fun onColorPickerClickListener(colorCode: Int) {
+                onColorChanged(colorCode)
+            }
+        })
+        rvColor.adapter = colorAdapter
+
+        panelShape.post { isShapePanelReady = true }
+    }
+
+    private fun setupStickerPanel() {
+        val rvSticker: RecyclerView = panelSticker.findViewById(R.id.rvStickerPanel)
+        rvSticker.layoutManager = GridLayoutManager(this, 4)
+        rvSticker.setHasFixedSize(true)
+        rvSticker.adapter = StickerPanelAdapter(stickerPaths) { bitmap ->
+            mPhotoEditor.addImage(bitmap)
+            mTxtCurrentTool.setText(R.string.label_sticker)
+            panelSticker.visibility = View.GONE
+            mEditingToolsAdapter.selectTool(ToolType.POINTER)
+        }
+    }
+
+    private inner class StickerPanelAdapter(
+        private val paths: Array<String>,
+        private val onStickerSelected: (Bitmap) -> Unit
+    ) : RecyclerView.Adapter<StickerPanelAdapter.ViewHolder>() {
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+            val view = LayoutInflater.from(parent.context).inflate(R.layout.row_sticker, parent, false)
+            return ViewHolder(view)
+        }
+
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+            Glide.with(this@EditImageActivity)
+                .asBitmap()
+                .load(paths[position])
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .placeholder(android.R.color.darker_gray)
+                .error(android.R.color.holo_red_light)
+                .into(object : CustomTarget<Bitmap>() {
+                    override fun onLoadStarted(placeholder: android.graphics.drawable.Drawable?) {
+                        holder.progressBar.visibility = View.VISIBLE
+                    }
+                    override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                        holder.progressBar.visibility = View.GONE
+                        holder.imgSticker.setImageBitmap(resource)
+                    }
+                    override fun onLoadFailed(errorDrawable: android.graphics.drawable.Drawable?) {
+                        holder.progressBar.visibility = View.GONE
+                    }
+                    override fun onLoadCleared(placeholder: android.graphics.drawable.Drawable?) {
+                        holder.imgSticker.setImageDrawable(placeholder)
+                    }
+                })
+        }
+
+        override fun getItemCount() = paths.size
+
+        inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+            val imgSticker: android.widget.ImageView = itemView.findViewById(R.id.imgSticker)
+            val progressBar: ProgressBar = itemView.findViewById(R.id.progressBar)
+            init {
+                itemView.setOnClickListener {
+                    Glide.with(this@EditImageActivity)
+                        .asBitmap()
+                        .load(paths[layoutPosition])
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
+                        .into(object : CustomTarget<Bitmap>(256, 256) {
+                            override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                                onStickerSelected(resource)
+                            }
+                            override fun onLoadCleared(placeholder: android.graphics.drawable.Drawable?) {}
+                        })
+                }
+            }
+        }
     }
 
     companion object {
