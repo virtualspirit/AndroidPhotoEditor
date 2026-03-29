@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Resources
 import android.graphics.Bitmap
+import android.net.Uri
 import android.graphics.Color
 import android.graphics.Path
 import android.graphics.RectF
@@ -302,12 +303,14 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
         return false
     }
 
-    override fun addCropAction(oldBitmap: Bitmap, newBitmap: Bitmap) {
+    override fun addCropAction(oldBitmap: Bitmap, newBitmap: Bitmap, oldSourceUri: Uri, newSourceUri: Uri) {
         val action = EditorAction(
             view = photoEditorView,
             actionType = ActionType.CROP,
             oldBitmap = oldBitmap,
-            newBitmap = newBitmap
+            newBitmap = newBitmap,
+            oldSourceUri = oldSourceUri,
+            newSourceUri = newSourceUri
         )
         mGraphicManager.pushUndoAction(action)
     }

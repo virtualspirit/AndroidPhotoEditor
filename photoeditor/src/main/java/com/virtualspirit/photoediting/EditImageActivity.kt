@@ -116,7 +116,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     private val mConstraintSet = ConstraintSet()
     private var mIsFilterVisible = false
     private var isModule = true
-    private var sourceUri: Uri? = null
+    var sourceUri: Uri? = null
     var originalBitmap: Bitmap? = null
     var currentPhotoFilter: PhotoFilter = PhotoFilter.NONE
 
@@ -698,15 +698,16 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
                         try {
                             val newBitmap = MediaStore.Images.Media.getBitmap(contentResolver, resultUri)
                             val oldBitmap = originalBitmap
+                            val oldUri = sourceUri
 
-                            if (oldBitmap != null) {
-                                mPhotoEditor.addCropAction(oldBitmap, newBitmap)
+                            if (oldBitmap != null && oldUri != null) {
+                                mPhotoEditor.addCropAction(oldBitmap, newBitmap, oldUri, resultUri)
                             }
 
                             originalBitmap = newBitmap
                             sourceUri = resultUri
                             mPhotoEditorView.source.setImageBitmap(newBitmap)
-                            mEditingToolsAdapter.selectTool(ToolType.POINTER)
+                            updateActionButtonsState()
                         } catch (e: IOException) {
                             e.printStackTrace()
                             showSnackbar("Failed to load cropped image")

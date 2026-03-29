@@ -1,6 +1,7 @@
 package com.virtualspirit.photoeditor
 
 import android.graphics.Bitmap
+import android.net.Uri
 import android.view.View
 import com.virtualspirit.photoediting.StrokeStyle
 
@@ -23,6 +24,8 @@ data class EditorAction(
     val newTextStyle: TextStyleBuilder? = null,
     val oldBitmap: Bitmap? = null,
     val newBitmap: Bitmap? = null,
+    val oldSourceUri: Uri? = null,
+    val newSourceUri: Uri? = null,
     val oldFilter: PhotoFilter? = null,
     val newFilter: PhotoFilter? = null,
 )
