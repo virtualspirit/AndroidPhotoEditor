@@ -226,7 +226,7 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
         val viewType = tagData.first as? ViewType ?: return false
         val originalGraphic = tagData.second as? Graphic ?: return false
 
-        if (viewType == ViewType.BRUSH_DRAWING && originalGraphic is Shape) {
+        if (viewType == ViewType.SHAPE && originalGraphic is Shape) {
             val originalShapeRecipe = originalGraphic.getRecipe() ?: return false
 
             // Buat instance graphic baru untuk duplikat
@@ -431,15 +431,7 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
         }
         Log.e("wew", "currentSelectedView is: ${currentView.javaClass.simpleName}, tag: ${currentView.tag}")
 
-        val viewType = if (currentView.tag is ViewType) {
-            currentView.tag as ViewType
-        } else if (currentView.tag is Pair<*, *>) {
-            (currentView.tag as Pair<*, *>).first as? ViewType
-        } else {
-            null
-        }
-
-        Log.e("wew", "Detected ViewType: $viewType")
+        val viewType = viewTypeFromTag(currentView)
         var oldColor: Int? = null
 
         when (viewType) {
@@ -448,17 +440,10 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
                 oldColor = textView?.currentTextColor
                 textView?.setTextColor(newColor)
             }
-            ViewType.BRUSH_DRAWING -> {
-                Log.e("wew", "Applying color to SHAPE view (BRUSH_DRAWING).")
+            ViewType.SHAPE -> {
                 val shapeView = currentView.findViewById<ShapeView>(R.id.shape_view)
                 oldColor = shapeView?.getCurrentColor()
-
-                if (shapeView != null) {
-                    shapeView.updateColor(newColor)
-                    Log.e("wew", "shapeView.updateColor() called.")
-                } else {
-                    Log.e("wew", "shapeView is NULL inside the selected view!")
-                }
+                shapeView?.updateColor(newColor)
             }
             else -> {
                 Log.e("wew", "Selected view is not of a type that can change color. Type: ${currentView.tag}")
@@ -476,25 +461,27 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
         }
     }
 
+    private fun viewTypeFromTag(view: View): ViewType? =
+        when (val tag = view.tag) {
+            is ViewType -> tag
+            is Pair<*, *> -> tag.first as? ViewType
+            else -> null
+        }
+
     override fun changeSelectedViewStrokeWidth(newWidth: Float) {
         val currentView = viewState.currentSelectedView ?: return
-
-        if (currentView.tag is ViewType && currentView.tag == ViewType.BRUSH_DRAWING ||
-            currentView.tag is Pair<*, *> && (currentView.tag as Pair<*, *>).first == ViewType.BRUSH_DRAWING) {
+        if (viewTypeFromTag(currentView) == ViewType.SHAPE) {
             val shapeView = currentView.findViewById<ShapeView>(R.id.shape_view)
             if (shapeView != null) {
                 val oldWidth = shapeView.getCurrentStrokeWidth()
-
                 if (oldWidth != newWidth) {
-                    val action = EditorAction(
+                    mGraphicManager.pushUndoAction(EditorAction(
                         view = currentView,
                         actionType = ActionType.CHANGE_STROKE,
                         oldStrokeWidth = oldWidth,
                         newStrokeWidth = newWidth
-                    )
-                    mGraphicManager.pushUndoAction(action)
+                    ))
                 }
-
                 shapeView.updateStrokeWidth(newWidth)
             }
         }
@@ -502,25 +489,20 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
 
     override fun getSelectedViewStrokeWidth(): Float? {
         val currentView = viewState.currentSelectedView ?: return null
-        if (currentView.tag is ViewType && currentView.tag == ViewType.BRUSH_DRAWING ||
-            currentView.tag is Pair<*, *> && (currentView.tag as Pair<*, *>).first == ViewType.BRUSH_DRAWING) {
-                val shapeView = currentView.findViewById<ShapeView>(R.id.shape_view)
-                return shapeView?.getCurrentStrokeWidth()
-            }
+        if (viewTypeFromTag(currentView) == ViewType.SHAPE) {
+            return currentView.findViewById<ShapeView>(R.id.shape_view)?.getCurrentStrokeWidth()
+        }
         return null
     }
 
     override fun changeSelectedViewStrokeStyle(newStyle: StrokeStyle) {
         val currentView = viewState.currentSelectedView ?: return
-
-        if (currentView.tag is ViewType && currentView.tag == ViewType.BRUSH_DRAWING ||
-            currentView.tag is Pair<*, *> && (currentView.tag as Pair<*, *>).first == ViewType.BRUSH_DRAWING) {
+        if (viewTypeFromTag(currentView) == ViewType.SHAPE) {
             val shapeView = currentView.findViewById<ShapeView>(R.id.shape_view)
             if (shapeView != null) {
                 val oldStyle = shapeView.getCurrentStrokeStyle()
                 if (oldStyle != newStyle) {
-                    val action = EditorAction(view = currentView, actionType = ActionType.CHANGE_STROKE_STYLE, oldStrokeStyle =  oldStyle, newStrokeStyle =  newStyle)
-                    mGraphicManager.pushUndoAction(action)
+                    mGraphicManager.pushUndoAction(EditorAction(view = currentView, actionType = ActionType.CHANGE_STROKE_STYLE, oldStrokeStyle = oldStyle, newStrokeStyle = newStyle))
                 }
                 shapeView.updateStrokeStyle(newStyle)
             }
@@ -529,10 +511,8 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
 
     override fun getSelectedViewStrokeStyle(): StrokeStyle? {
         val currentView = viewState.currentSelectedView ?: return null
-        if (currentView.tag is ViewType && currentView.tag == ViewType.BRUSH_DRAWING ||
-            currentView.tag is Pair<*, *> && (currentView.tag as Pair<*, *>).first == ViewType.BRUSH_DRAWING) {
-            val shapeView = currentView.findViewById<ShapeView>(R.id.shape_view)
-            return shapeView?.getCurrentStrokeStyle()
+        if (viewTypeFromTag(currentView) == ViewType.SHAPE) {
+            return currentView.findViewById<ShapeView>(R.id.shape_view)?.getCurrentStrokeStyle()
         }
         return null
     }
@@ -613,6 +593,7 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
 
     fun enterShapeCreatingMode() {
         Log.d("DrawingView", "Entering Shape Creating Mode...")
+        drawingView.bringToFront()
         drawingView.isShapeCreatingMode = true
         setBrushDrawingMode(true)
     }

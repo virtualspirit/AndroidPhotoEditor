@@ -25,7 +25,7 @@ abstract class AbstractShape(protected val tag: String) : Shape {
 
     override fun hasBeenTapped(): Boolean {
         val bounds = bounds
-        return bounds.top < TOUCH_TOLERANCE && bounds.bottom < TOUCH_TOLERANCE && bounds.left < TOUCH_TOLERANCE && bounds.right < TOUCH_TOLERANCE
+        return bounds.width() < TOUCH_TOLERANCE && bounds.height() < TOUCH_TOLERANCE
     }
 
     override fun toString(): String {

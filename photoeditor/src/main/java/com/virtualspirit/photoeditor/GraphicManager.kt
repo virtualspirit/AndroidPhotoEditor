@@ -65,7 +65,7 @@ class GraphicManager(
                 mViewState.clearRedoActions()
             }
 
-            (viewToRemove.tag as? ViewType)?.let {
+            viewTypeFromTag(viewToRemove)?.let {
                 onPhotoEditorListener?.onRemoveViewListener(it, mViewState.addedViewsCount)
             }
             return true
@@ -90,7 +90,7 @@ class GraphicManager(
                 val view = lastAction.view
                 mPhotoEditorView.removeView(view)
                 mViewState.removeAddedView(view)
-                (view.tag as? ViewType)?.let {
+                viewTypeFromTag(view)?.let {
                     onPhotoEditorListener?.onRemoveViewListener(it, mViewState.addedViewsCount)
                 }
             }
@@ -100,7 +100,7 @@ class GraphicManager(
                 mViewState.addAddedView(view)
                 mViewState.currentSelectedView = view
 
-                (view.tag as? ViewType)?.let {
+                viewTypeFromTag(view)?.let {
                     onPhotoEditorListener?.onAddViewListener(it, mViewState.addedViewsCount)
                 }
             }
@@ -170,7 +170,7 @@ class GraphicManager(
                 mViewState.addAddedView(view)
 
                 mViewState.currentSelectedView = view
-                (view.tag as? ViewType)?.let {
+                viewTypeFromTag(view)?.let {
                     onPhotoEditorListener?.onAddViewListener(it, mViewState.addedViewsCount)
                 }
             }
@@ -181,7 +181,7 @@ class GraphicManager(
 
                 mViewState.currentSelectedView = null
 
-                (view.tag as? ViewType)?.let {
+                viewTypeFromTag(view)?.let {
                     onPhotoEditorListener?.onRemoveViewListener(it, mViewState.addedViewsCount)
                 }
             }
@@ -239,20 +239,19 @@ class GraphicManager(
         return mViewState.redoActionsCount > 0
     }
 
-    private fun applyColorToView(view: View, color: Int) {
-        val viewType = if (view.tag is ViewType) {
-            view.tag as ViewType
-        } else if (view.tag is Pair<*, *>) {
-            (view.tag as Pair<*, *>).first as? ViewType
-        } else {
-            null
+    private fun viewTypeFromTag(view: View): ViewType? =
+        when (val tag = view.tag) {
+            is ViewType -> tag
+            is Pair<*, *> -> tag.first as? ViewType
+            else -> null
         }
 
-        when (viewType) {
+    private fun applyColorToView(view: View, color: Int) {
+        when (viewTypeFromTag(view)) {
             ViewType.TEXT -> {
                 view.findViewById<TextView>(R.id.tvPhotoEditorText)?.setTextColor(color)
             }
-            ViewType.BRUSH_DRAWING -> {
+            ViewType.BRUSH_DRAWING, ViewType.SHAPE -> {
                 view.findViewById<ShapeView>(R.id.shape_view)?.updateColor(color)
             }
             else -> {}
