@@ -697,14 +697,14 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
                     if (resultUri != null) {
                         try {
                             val newBitmap = MediaStore.Images.Media.getBitmap(contentResolver, resultUri)
-
-//                            val oldBitmap = bitmapBeforeCrop
                             val oldBitmap = originalBitmap
 
                             if (oldBitmap != null) {
                                 mPhotoEditor.addCropAction(oldBitmap, newBitmap)
                             }
 
+                            originalBitmap = newBitmap
+                            sourceUri = resultUri
                             mPhotoEditorView.source.setImageBitmap(newBitmap)
                             mEditingToolsAdapter.selectTool(ToolType.POINTER)
                         } catch (e: IOException) {
@@ -858,16 +858,16 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
                 showFilter(false)
             }
             ToolType.CLIP -> {
-//                bitmapBeforeCrop = (mPhotoEditorView.source.drawable as? BitmapDrawable)?.bitmap
-                sourceUri?.let {
-                    val options =
-                        Options()
-                    options.setFreeStyleCropEnabled (true)
-                    of(it, it)
+                sourceUri?.let { inputUri ->
+                    val outputFile = File(cacheDir, "cropped_${System.currentTimeMillis()}.png")
+                    val outputUri = outputFile.toUri()
+                    val options = Options()
+                    options.setFreeStyleCropEnabled(true)
+                    UCrop.of(inputUri, outputUri)
                         .withMaxResultSize(2048, 2048)
                         .withOptions(options)
                         .start(this, UCrop.REQUEST_CROP)
-                };
+                }
                 showFilter(false)
             }
 
