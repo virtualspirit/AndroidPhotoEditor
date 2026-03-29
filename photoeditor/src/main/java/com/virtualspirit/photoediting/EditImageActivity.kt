@@ -544,7 +544,12 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
                 val currentStyle = mPhotoEditor.getSelectedViewStrokeStyle()
                     ?: StrokeStyle.SOLID
                 val currentColor = mPhotoEditor.getSelectedViewColor()
-                val topSheet = TopPaletteDialogFragment.newInstance(currentStroke, currentStyle, customColors, currentColor)
+                val isClosedShape = mPhotoEditor.isSelectedViewClosedShape()
+                val currentFillColor = mPhotoEditor.getSelectedViewFillColor()
+                val topSheet = TopPaletteDialogFragment.newInstance(
+                    currentStroke, currentStyle, customColors, currentColor,
+                    isClosedShape, currentFillColor
+                )
                 topSheet.setOnColorSelectListener { color ->
                     mPhotoEditor.changeSelectedViewColor(color)
                 }
@@ -553,6 +558,9 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
                 }
                 topSheet.setOnStrokeStyleSelectListener { style ->
                     mPhotoEditor.changeSelectedViewStrokeStyle(style)
+                }
+                topSheet.setOnFillColorSelectListener { color ->
+                    mPhotoEditor.changeSelectedViewFillColor(color)
                 }
                 topSheet.setOnDismissListener {
                     mPhotoEditor.clearHelperBox()

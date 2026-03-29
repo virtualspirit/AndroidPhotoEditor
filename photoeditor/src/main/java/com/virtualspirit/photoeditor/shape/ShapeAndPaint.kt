@@ -7,5 +7,6 @@ import android.graphics.Paint
  */
 open class ShapeAndPaint(
     val shape: AbstractShape,
-    val paint: Paint
+    val paint: Paint,
+    val fillPaint: Paint? = null
 )

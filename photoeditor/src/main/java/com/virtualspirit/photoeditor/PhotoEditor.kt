@@ -375,6 +375,9 @@ interface PhotoEditor {
     fun isAnyViewSelected(): Boolean
     fun isSelectedViewColorEditable(): Boolean
     fun getSelectedViewColor(): Int?
+    fun isSelectedViewClosedShape(): Boolean
+    fun getSelectedViewFillColor(): Int?
+    fun changeSelectedViewFillColor(color: Int?)
     fun onStopViewChangeListener(viewType: ViewType)
     fun duplicateSelectedView(): Boolean
 

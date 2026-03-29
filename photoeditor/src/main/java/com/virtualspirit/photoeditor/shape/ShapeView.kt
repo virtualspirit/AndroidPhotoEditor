@@ -10,6 +10,7 @@ import android.util.AttributeSet
 import android.util.Log
 import android.view.View
 import com.virtualspirit.photoediting.StrokeStyle
+import com.virtualspirit.photoeditor.shape.ShapeType
 
 class ShapeView @JvmOverloads constructor(
     context: Context,
@@ -18,11 +19,18 @@ class ShapeView @JvmOverloads constructor(
 ) : View(context, attrs, defStyleAttr) {
 
     private val paint = Paint()
+    private val fillPaint = Paint().apply {
+        isAntiAlias = true
+        isDither = true
+        style = Paint.Style.FILL
+    }
+    private var fillColor: Int? = null
     private var shapePath: Path? = null
     private var desiredStrokeWidth: Float = 0f
     private var parentScale = 1.0f // Default skala adalah 1
 
     private var currentStyle: StrokeStyle = StrokeStyle.SOLID
+    private var currentShapeType: ShapeType = ShapeType.Brush
 
     init {
         setLayerType(LAYER_TYPE_SOFTWARE, null)
@@ -31,6 +39,12 @@ class ShapeView @JvmOverloads constructor(
     fun setShape(builder: ShapeBuilder, path: Path) {
         this.shapePath = path
         this.desiredStrokeWidth = builder.shapeSize
+        this.currentShapeType = builder.shapeType
+        this.fillColor = builder.fillColor
+        fillColor?.let { color ->
+            fillPaint.color = color
+            builder.shapeOpacity?.let { fillPaint.alpha = it }
+        }
         setupPaint(builder)
         invalidate()
     }
@@ -60,11 +74,13 @@ class ShapeView @JvmOverloads constructor(
 //            canvas.drawPath(it, paint)
 //        }
         super.onDraw(canvas)
-        shapePath?.let {
+        shapePath?.let { path ->
+            // Draw fill first so stroke renders on top
+            fillColor?.let { canvas.drawPath(path, fillPaint) }
             val currentScale = if (parentScale > 0) parentScale else 1.0f
             paint.strokeWidth = desiredStrokeWidth / currentScale
             applyPathEffect(paint.strokeWidth)
-            canvas.drawPath(it, paint)
+            canvas.drawPath(path, paint)
         }
     }
 
@@ -110,6 +126,19 @@ class ShapeView @JvmOverloads constructor(
     fun getPath(): Path? {
         return shapePath
     }
+
+    fun getCurrentFillColor(): Int? = fillColor
+
+    fun updateFillColor(color: Int?) {
+        fillColor = color
+        if (color != null) {
+            fillPaint.color = color
+        }
+        invalidate()
+    }
+
+    fun isClosedShape(): Boolean =
+        currentShapeType == ShapeType.Oval || currentShapeType == ShapeType.Rectangle
 
     private fun applyPathEffect(strokeWidth: Float) {
         val w = strokeWidth.coerceAtLeast(1f)
