@@ -489,11 +489,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         )
 
         updateActionButtonsState()
-        if (viewType == ViewType.BRUSH_DRAWING) {
-            mImgPalette.isEnabled = true
-        } else {
-            mImgPalette.isEnabled = false
-        }
+        mImgPalette.isEnabled = viewType == ViewType.BRUSH_DRAWING || viewType == ViewType.SHAPE
     }
 
     override fun onRemoveViewListener(viewType: ViewType, numberOfAddedViews: Int) {
@@ -503,11 +499,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         )
 
         updateActionButtonsState()
-        if (viewType == ViewType.BRUSH_DRAWING) {
-            mImgPalette.isEnabled = true
-        } else {
-            mImgPalette.isEnabled = false
-        }
+        mImgPalette.isEnabled = viewType == ViewType.BRUSH_DRAWING || viewType == ViewType.SHAPE
     }
 
     override fun onStartViewChangeListener(viewType: ViewType) {
@@ -515,11 +507,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         mImgDelete.isEnabled = true
         mImgDuplicate.isEnabled = true
 
-        if (viewType == ViewType.BRUSH_DRAWING) {
-            mImgPalette.isEnabled = true
-        } else {
-            mImgPalette.isEnabled = false
-        }
+        mImgPalette.isEnabled = viewType == ViewType.BRUSH_DRAWING || viewType == ViewType.SHAPE
     }
 
     override fun onStopViewChangeListener(viewType: ViewType) {

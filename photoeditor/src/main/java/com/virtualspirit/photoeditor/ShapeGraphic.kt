@@ -20,7 +20,7 @@ internal class Shape(
 ) : Graphic(
     context = mPhotoEditorView.context,
     graphicManager = mGraphicManager,
-    viewType = ViewType.BRUSH_DRAWING, // Or create a new ViewType.SHAPE
+    viewType = ViewType.SHAPE,
     layoutId = R.layout.view_photo_editor_shape
 ) {
     private var shapeView: ShapeView? = null

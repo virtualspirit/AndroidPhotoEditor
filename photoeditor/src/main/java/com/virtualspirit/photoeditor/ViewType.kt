@@ -12,6 +12,7 @@ package com.virtualspirit.photoeditor
  */
 enum class ViewType {
     BRUSH_DRAWING,
+    SHAPE,
     TEXT,
     IMAGE,
     EMOJI
