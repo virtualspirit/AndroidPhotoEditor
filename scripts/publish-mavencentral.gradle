@@ -119,7 +119,8 @@ nexusStaging {
     password = ossrhPassword
 }
 
-signing {
-    required { ext["signing.keyId"]?.trim() }
-    sign publishing.publications
+if (ext["signing.keyId"]?.trim()) {
+    signing {
+        sign publishing.publications
+    }
 }
