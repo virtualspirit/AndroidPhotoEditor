@@ -46,7 +46,7 @@ internal class Shape(
         shapeView = rootView.findViewById(R.id.shape_view)
     }
 
-//    init {
-//        setupGesture()
-//    }
+    init {
+        setupGesture()
+    }
 }
