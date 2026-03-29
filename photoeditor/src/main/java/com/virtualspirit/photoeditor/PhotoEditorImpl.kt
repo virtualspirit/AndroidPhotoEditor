@@ -481,7 +481,7 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
 
         if (currentView.tag is ViewType && currentView.tag == ViewType.BRUSH_DRAWING ||
             currentView.tag is Pair<*, *> && (currentView.tag as Pair<*, *>).first == ViewType.BRUSH_DRAWING) {
-            val shapeView = currentView.findViewById<ja.burhanrashid52.photoeditor.shape.ShapeView>(R.id.shape_view)
+            val shapeView = currentView.findViewById<ShapeView>(R.id.shape_view)
             if (shapeView != null) {
                 val oldWidth = shapeView.getCurrentStrokeWidth()
 
