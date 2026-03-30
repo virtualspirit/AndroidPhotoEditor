@@ -129,8 +129,12 @@ class GraphicManager(
                 lastAction.oldTextStyle?.applyStyle(textView)
             }
 
-            ActionType.CROP -> lastAction.oldBitmap?.let {
-                mPhotoEditorView.source.setImageBitmap(it)
+            ActionType.CROP -> {
+                lastAction.oldBitmap?.let { mPhotoEditorView.source.setImageBitmap(it) }
+                (mPhotoEditorView.context as? EditImageActivity)?.let { activity ->
+                    activity.originalBitmap = lastAction.oldBitmap
+                    lastAction.oldSourceUri?.let { activity.sourceUri = it }
+                }
             }
 
             ActionType.FILTER -> {
@@ -211,8 +215,12 @@ class GraphicManager(
                 lastRedoAction.newTextStyle?.applyStyle(textView)
             }
 
-            ActionType.CROP -> lastRedoAction.newBitmap?.let {
-                mPhotoEditorView.source.setImageBitmap(it)
+            ActionType.CROP -> {
+                lastRedoAction.newBitmap?.let { mPhotoEditorView.source.setImageBitmap(it) }
+                (mPhotoEditorView.context as? EditImageActivity)?.let { activity ->
+                    activity.originalBitmap = lastRedoAction.newBitmap
+                    lastRedoAction.newSourceUri?.let { activity.sourceUri = it }
+                }
             }
 
             ActionType.FILTER -> {

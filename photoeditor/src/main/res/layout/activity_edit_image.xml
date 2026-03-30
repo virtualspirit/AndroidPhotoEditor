@@ -172,4 +172,36 @@
         app:layout_constraintEnd_toStartOf="@+id/imgUndo"
         app:layout_constraintStart_toEndOf="@+id/imgCamera" />
 
+    <!-- Shape overlay panel (iOS-style: not a modal, just a view above toolbar) -->
+    <FrameLayout
+        android:id="@+id/panelShape"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/rvConstraintTools"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <include layout="@layout/fragment_bottom_shapes_dialog" />
+    </FrameLayout>
+
+    <!-- Sticker overlay panel (iOS-style: not a modal, just a view above toolbar) -->
+    <LinearLayout
+        android:id="@+id/panelSticker"
+        android:layout_width="0dp"
+        android:layout_height="280dp"
+        android:background="#E6000000"
+        android:orientation="vertical"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/rvConstraintTools"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvStickerPanel"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="8dp" />
+    </LinearLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

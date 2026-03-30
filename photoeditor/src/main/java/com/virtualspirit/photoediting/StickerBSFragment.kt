@@ -28,7 +28,6 @@ import com.virtualspirit.photoeditor.R
 class StickerBSFragment : BottomSheetDialogFragment() {
     private var mStickerListener: StickerListener? = null
     private var stickerPathList: Array<String> = DEFAULT_STICKER_PATHS
-    private var selectionMade: Boolean = false
     
     fun setStickerListener(stickerListener: StickerListener?) {
         mStickerListener = stickerListener
@@ -59,9 +58,7 @@ class StickerBSFragment : BottomSheetDialogFragment() {
 
     override fun onDismiss(dialog: DialogInterface) {
         super.onDismiss(dialog)
-        if (!selectionMade) {
-            mStickerListener?.onStickerSelectionCancelled()
-        }
+        mStickerListener?.onStickerSelectionCancelled()
     }
 
     @SuppressLint("RestrictedApi")
@@ -137,14 +134,12 @@ class StickerBSFragment : BottomSheetDialogFragment() {
                                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                                 .into(object : CustomTarget<Bitmap?>(256, 256) {
                                     override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap?>?) {
-                                        selectionMade = true
                                         mStickerListener!!.onStickerClick(resource)
                                     }
 
                                     override fun onLoadCleared(placeholder: Drawable?) {}
                                 })
                     }
-                    dismiss()
                 }
             }
         }

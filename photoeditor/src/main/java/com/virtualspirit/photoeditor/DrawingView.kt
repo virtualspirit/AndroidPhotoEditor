@@ -81,6 +81,7 @@ class DrawingView @JvmOverloads constructor(
 
     public override fun onDraw(canvas: Canvas) {
         for (shape in drawShapes) {
+            shape?.fillPaint?.let { fp -> shape.shape?.draw(canvas, fp) }
             shape?.shape?.draw(canvas, shape.paint)
         }
     }
@@ -165,7 +166,15 @@ class DrawingView @JvmOverloads constructor(
             }
         }
 
-        currentShape = ShapeAndPaint(shape, paint)
+        val fillPaint = currentShapeBuilder.fillColor?.let { color ->
+            Paint().apply {
+                isAntiAlias = true
+                style = Paint.Style.FILL
+                this.color = color
+                currentShapeBuilder.shapeOpacity?.let { alpha = it }
+            }
+        }
+        currentShape = ShapeAndPaint(shape, paint, fillPaint)
         drawShapes.push(currentShape)
         viewChangeListener?.onStartDrawing()
     }

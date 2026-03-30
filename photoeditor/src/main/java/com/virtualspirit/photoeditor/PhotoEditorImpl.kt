@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Resources
 import android.graphics.Bitmap
+import android.net.Uri
 import android.graphics.Color
 import android.graphics.Path
 import android.graphics.RectF
@@ -21,7 +22,6 @@ import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.annotation.IntRange
 import androidx.annotation.RequiresPermission
-import androidx.constraintlayout.widget.ConstraintLayout
 import com.virtualspirit.photoediting.EditImageActivity
 import com.virtualspirit.photoediting.StrokeStyle
 import com.virtualspirit.photoeditor.PhotoEditorImageViewListener.OnSingleTapUpCallback
@@ -302,12 +302,14 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
         return false
     }
 
-    override fun addCropAction(oldBitmap: Bitmap, newBitmap: Bitmap) {
+    override fun addCropAction(oldBitmap: Bitmap, newBitmap: Bitmap, oldSourceUri: Uri, newSourceUri: Uri) {
         val action = EditorAction(
             view = photoEditorView,
             actionType = ActionType.CROP,
             oldBitmap = oldBitmap,
-            newBitmap = newBitmap
+            newBitmap = newBitmap,
+            oldSourceUri = oldSourceUri,
+            newSourceUri = newSourceUri
         )
         mGraphicManager.pushUndoAction(action)
     }
@@ -540,52 +542,41 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
         if (bounds.width() < AbstractShape.TOUCH_TOLERANCE || bounds.height() < AbstractShape.TOUCH_TOLERANCE) return
 
         val shapeBuilder = drawingView.currentShapeBuilder
+        val strokePadding = shapeBuilder.shapeSize.coerceAtLeast(1f)
 
-        val sourceImageViewTop = imageView.top.toFloat()
-        val correctedTop = bounds.top + sourceImageViewTop
-
-        val maxStrokeWidth = 50f
+        // DrawingView is aligned to imageView edges, so its (0,0) is at
+        // (imageView.left, imageView.top) inside PhotoEditorView.
+        val imageLeft = imageView.left.toFloat()
+        val imageTop = imageView.top.toFloat()
 
         val shapeGraphic = Shape(photoEditorView, mMultiTouchListener, viewState, mGraphicManager)
         val rootView = shapeGraphic.rootView
-        val frmBorder = rootView.findViewById<FrameLayout>(R.id.frmBorder)
 
-        val borderContentWidth = (bounds.width() + maxStrokeWidth).toInt()
-        val borderContentHeight = (bounds.height() + maxStrokeWidth).toInt()
+        // The content area (path + stroke padding on each side).
+        val contentWidth  = (bounds.width()  + strokePadding).toInt()
+        val contentHeight = (bounds.height() + strokePadding).toInt()
 
-        val borderParams = frmBorder.layoutParams as ConstraintLayout.LayoutParams
-        borderParams.width = borderContentWidth
-        borderParams.height = borderContentHeight
-        frmBorder.layoutParams = borderParams
-
+        // Translate the path so it sits inside the content area with strokePadding/2 inset.
         val translatedPath = Path(shape.path)
-        val pathOffsetX = -bounds.left + (maxStrokeWidth / 2f)
-        val pathOffsetY = -bounds.top + (maxStrokeWidth / 2f)
-        translatedPath.offset(pathOffsetX, pathOffsetY)
-
-        val rootParams = RelativeLayout.LayoutParams(
-            RelativeLayout.LayoutParams.WRAP_CONTENT,
-            RelativeLayout.LayoutParams.WRAP_CONTENT
-        )
-        rootView.layoutParams = rootParams // Terapkan sementara untuk pengukuran
-
-        rootView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
-        val measuredWidth = rootView.measuredWidth
-        val measuredHeight = rootView.measuredHeight
-
-        val shapeCenterX = bounds.left + bounds.width() / 2f
-        val shapeCenterY = correctedTop + bounds.height() / 2f
-
-        rootParams.leftMargin = (shapeCenterX - measuredWidth / 2f).toInt()
-        rootParams.topMargin = (shapeCenterY - measuredHeight / 2f).toInt()
-
-        rootView.layoutParams = rootParams
+        translatedPath.offset(-bounds.left + strokePadding / 2f, -bounds.top + strokePadding / 2f)
 
         shapeGraphic.buildView(shapeBuilder, translatedPath)
 
+        // Give rootView explicit dimensions equal to the content area.
+        // frmBorder uses 0dp (MATCH_CONSTRAINT) constrained to all 4 parent edges,
+        // so it fills rootView exactly — its top-left is at rootView's (0,0).
+        // This avoids any offset caused by WRAP_CONTENT including the handle widgets
+        // (corner handles are 10dp centered on frmBorder's corners, extending 5dp outside).
+        // The handles still render outside rootView because clipChildren=false is set
+        // on both rootView and PhotoEditorView.
+        val rootParams = RelativeLayout.LayoutParams(contentWidth, contentHeight)
+        rootParams.leftMargin = (bounds.left + imageLeft - strokePadding / 2f).toInt()
+        rootParams.topMargin  = (bounds.top  + imageTop  - strokePadding / 2f).toInt()
+        rootView.layoutParams = rootParams
+
         addToEditor(shapeGraphic, clearFocus = false)
 
-        // Reset mode drawing.
+        // Reset drawing mode.
         drawingView.isShapeCreatingMode = false
         setBrushDrawingMode(false)
         mOnPhotoEditorListener?.onShapeCreated()
@@ -637,6 +628,34 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
 
     override fun isAnyViewSelected(): Boolean {
         return viewState.currentSelectedView != null
+    }
+
+    override fun isSelectedViewColorEditable(): Boolean {
+        val view = viewState.currentSelectedView ?: return false
+        val type = viewTypeFromTag(view)
+        return type == ViewType.SHAPE || type == ViewType.BRUSH_DRAWING
+    }
+
+    override fun getSelectedViewColor(): Int? {
+        val view = viewState.currentSelectedView ?: return null
+        return view.findViewById<ShapeView>(R.id.shape_view)?.getCurrentColor()
+    }
+
+    override fun isSelectedViewClosedShape(): Boolean {
+        val view = viewState.currentSelectedView ?: return false
+        return view.findViewById<ShapeView>(R.id.shape_view)?.isClosedShape() ?: false
+    }
+
+    override fun getSelectedViewFillColor(): Int? {
+        val view = viewState.currentSelectedView ?: return null
+        return view.findViewById<ShapeView>(R.id.shape_view)?.getCurrentFillColor()
+    }
+
+    override fun changeSelectedViewFillColor(color: Int?) {
+        val currentView = viewState.currentSelectedView ?: return
+        if (viewTypeFromTag(currentView) == ViewType.SHAPE) {
+            currentView.findViewById<ShapeView>(R.id.shape_view)?.updateFillColor(color)
+        }
     }
 
     override fun onTransform(view: View, oldTransform: ViewTransform, newTransform: ViewTransform) {

@@ -30,6 +30,10 @@ class ShapeBuilder {
     var shapeColor: Int = DEFAULT_SHAPE_COLOR
         private set
 
+    @get:ColorInt
+    var fillColor: Int? = null
+        private set
+
     fun withShapeType(shapeType: ShapeType): ShapeBuilder {
         this.shapeType = shapeType
         return this
@@ -57,6 +61,11 @@ class ShapeBuilder {
 
     fun withShapeColor(@ColorInt color: Int): ShapeBuilder {
         shapeColor = color
+        return this
+    }
+
+    fun withFillColor(@ColorInt color: Int?): ShapeBuilder {
+        fillColor = color
         return this
     }
 

@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Typeface
+import android.net.Uri
 import android.view.View
 import android.widget.ImageView
 import androidx.annotation.IntRange
@@ -373,10 +374,15 @@ interface PhotoEditor {
 
     fun deleteSelectedView(): Boolean
     fun isAnyViewSelected(): Boolean
+    fun isSelectedViewColorEditable(): Boolean
+    fun getSelectedViewColor(): Int?
+    fun isSelectedViewClosedShape(): Boolean
+    fun getSelectedViewFillColor(): Int?
+    fun changeSelectedViewFillColor(color: Int?)
     fun onStopViewChangeListener(viewType: ViewType)
     fun duplicateSelectedView(): Boolean
 
-    fun addCropAction(oldBitmap: Bitmap, newBitmap: Bitmap)
+    fun addCropAction(oldBitmap: Bitmap, newBitmap: Bitmap, oldSourceUri: Uri, newSourceUri: Uri)
     fun addFilterAction(oldFilter: PhotoFilter, newFilter: PhotoFilter)
     fun setFilterEffect(sourceBitmap: Bitmap, filterType: PhotoFilter)
 

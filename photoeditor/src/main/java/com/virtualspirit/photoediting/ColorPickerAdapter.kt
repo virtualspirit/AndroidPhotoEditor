@@ -51,9 +51,10 @@ class ColorPickerAdapter internal constructor(
     override fun onBindViewHolder(holder: ViewHolder, @SuppressLint("RecyclerView") position: Int) {
         val borderWidth = if (position == selectedPosition) 10 else 4
 
-        if(this.addTransparent && position == 0) {
+        if (colorPickerColors[position] == Color.TRANSPARENT) {
             holder.colorPickerView.visibility = View.GONE
             holder.transparentPickerView.visibility = View.VISIBLE
+            holder.transparentPickerView.alpha = if (position == selectedPosition) 1f else 0.6f
         } else {
             val drawable = GradientDrawable()
             drawable.shape = GradientDrawable.OVAL
@@ -63,8 +64,6 @@ class ColorPickerAdapter internal constructor(
             holder.colorPickerView.visibility = View.VISIBLE
             holder.transparentPickerView.visibility = View.GONE
         }
-
-
     }
 
     override fun getItemCount(): Int {
@@ -73,6 +72,25 @@ class ColorPickerAdapter internal constructor(
 
     fun setOnColorPickerClickListener(onColorPickerClickListener: OnColorPickerClickListener) {
         this.onColorPickerClickListener = onColorPickerClickListener
+    }
+
+    fun setSelectedColor(color: Int) {
+        val pos = colorPickerColors.indexOf(color)
+        if (pos >= 0 && pos != selectedPosition) {
+            val old = selectedPosition
+            selectedPosition = pos
+            notifyItemChanged(old)
+            notifyItemChanged(pos)
+        }
+    }
+
+    fun setSelectedPosition(pos: Int) {
+        if (pos >= 0 && pos < colorPickerColors.size && pos != selectedPosition) {
+            val old = selectedPosition
+            selectedPosition = pos
+            notifyItemChanged(old)
+            notifyItemChanged(pos)
+        }
     }
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
