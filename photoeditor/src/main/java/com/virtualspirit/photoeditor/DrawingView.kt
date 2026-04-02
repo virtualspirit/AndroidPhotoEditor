@@ -59,9 +59,10 @@ class DrawingView @JvmOverloads constructor(
             // otherwise 'paint.alpha' value will be overwritten.
             paint.color = this.shapeColor
             shapeOpacity?.also { paint.alpha = it }
+            val w = this.shapeSize.coerceAtLeast(1f)
             paint.pathEffect = when (this.shapeStyle) {
-                StrokeStyle.DASHED -> DashPathEffect(floatArrayOf(30f, 20f), 0f)
-                StrokeStyle.DOTTED -> DashPathEffect(floatArrayOf(5f, 15f), 0f)
+                StrokeStyle.DASHED -> DashPathEffect(floatArrayOf(w, w * 2f), 0f)
+                StrokeStyle.DOTTED -> DashPathEffect(floatArrayOf(w * 0.01f, w * 2f), 0f)
                 StrokeStyle.SOLID -> null
             }
         }

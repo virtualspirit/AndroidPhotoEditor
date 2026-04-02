@@ -142,11 +142,11 @@ class ShapeView @JvmOverloads constructor(
 
     private fun applyPathEffect(strokeWidth: Float) {
         val w = strokeWidth.coerceAtLeast(1f)
-        // With ROUND cap: visual dash length = on + w, visual gap = off - w
-        // off = w * 3f → visual gap = 2w at every stroke size
+        // With ROUND cap: visual dash = on + w, visual gap = off - w
+        // 'on' must be proportional to w (not fixed) so dots stay circular at any scale.
         paint.pathEffect = when (currentStyle) {
-            StrokeStyle.DASHED -> DashPathEffect(floatArrayOf(w * 2.5f, w * 3f), 0f)
-            StrokeStyle.DOTTED -> DashPathEffect(floatArrayOf(1f, w * 3.5f), 0f)
+            StrokeStyle.DASHED -> DashPathEffect(floatArrayOf(w, w * 2f), 0f)
+            StrokeStyle.DOTTED -> DashPathEffect(floatArrayOf(w * 0.01f, w * 2f), 0f)
             StrokeStyle.SOLID -> null
         }
     }
