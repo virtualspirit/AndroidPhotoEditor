@@ -542,7 +542,11 @@ internal class PhotoEditorImpl @SuppressLint("ClickableViewAccessibility") const
         if (bounds.width() < AbstractShape.TOUCH_TOLERANCE || bounds.height() < AbstractShape.TOUCH_TOLERANCE) return
 
         val shapeBuilder = drawingView.currentShapeBuilder
-        val strokePadding = shapeBuilder.shapeSize.coerceAtLeast(1f)
+        // Each side needs strokeWidth/2 clearance for the stroke cap, plus a small
+        // anti-aliasing margin. Doubling shapeSize means each side gets a full
+        // shapeSize of breathing room, preventing round caps from being clipped
+        // even when parentScale < 1 or due to sub-pixel rounding.
+        val strokePadding = shapeBuilder.shapeSize.coerceAtLeast(1f) * 2f
 
         // DrawingView is aligned to imageView edges, so its (0,0) is at
         // (imageView.left, imageView.top) inside PhotoEditorView.

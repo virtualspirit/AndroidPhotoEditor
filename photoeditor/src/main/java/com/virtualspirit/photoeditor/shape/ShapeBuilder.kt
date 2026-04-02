@@ -70,7 +70,7 @@ class ShapeBuilder {
     }
 
     companion object {
-        const val DEFAULT_SHAPE_SIZE = 25.0f
+        const val DEFAULT_SHAPE_SIZE = 18.0f
         val DEFAULT_SHAPE_OPACITY = null
         const val DEFAULT_SHAPE_COLOR = Color.BLACK
     }
