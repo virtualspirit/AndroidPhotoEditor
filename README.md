@@ -176,6 +176,12 @@ startActivityForResult(intent, REQUEST_CODE)
 
 ---
 
+## Build & Publish
+
+See [PUBLISH.md](PUBLISH.md) for step-by-step instructions on bumping the version, building the AAR locally, and releasing a new version via GitHub Actions + JitPack.
+
+---
+
 ## License
 
 MIT — Copyright (c) virtualspirit
