@@ -5,7 +5,7 @@ import android.app.ProgressDialog
 import android.content.pm.PackageManager
 import android.view.View
 import android.view.Window
-import android.view.WindowManager
+import androidx.core.view.WindowCompat
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -36,10 +36,12 @@ open class BaseActivity : AppCompatActivity() {
 
     fun makeFullScreen() {
         requestWindowFeature(Window.FEATURE_NO_TITLE)
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_FULLSCREEN,
-            WindowManager.LayoutParams.FLAG_FULLSCREEN
-        )
+        // FLAG_FULLSCREEN is deprecated since API 30 and ignored on Android 12+.
+        // It also causes systemBars.top to report 0, which breaks WindowInsets-based
+        // padding. WindowCompat.setDecorFitsSystemWindows(false) is the modern
+        // equivalent: it enables edge-to-edge drawing and correctly dispatches
+        // system bar insets so callers can apply the right top padding.
+        WindowCompat.setDecorFitsSystemWindows(window, false)
     }
 
     protected fun showLoading(message: String) {
