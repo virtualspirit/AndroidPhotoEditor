@@ -40,7 +40,7 @@ allprojects {
 Add the dependency in your app-level `build.gradle`:
 
 ```groovy
-implementation 'com.github.virtualspirit:AndroidPhotoEditor:v3.1.7'
+implementation 'com.github.virtualspirit:AndroidPhotoEditor:v3.1.8'
 ```
 
 ---
