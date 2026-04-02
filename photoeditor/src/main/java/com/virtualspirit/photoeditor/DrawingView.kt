@@ -11,7 +11,6 @@ import android.util.Log
 import android.util.Pair
 import android.view.MotionEvent
 import android.view.View
-import android.graphics.DashPathEffect
 import com.virtualspirit.photoeditor.shape.*
 import com.virtualspirit.photoediting.StrokeStyle
 import java.util.*
@@ -59,11 +58,7 @@ class DrawingView @JvmOverloads constructor(
             // otherwise 'paint.alpha' value will be overwritten.
             paint.color = this.shapeColor
             shapeOpacity?.also { paint.alpha = it }
-            paint.pathEffect = when (this.shapeStyle) {
-                StrokeStyle.DASHED -> DashPathEffect(floatArrayOf(30f, 20f), 0f)
-                StrokeStyle.DOTTED -> DashPathEffect(floatArrayOf(5f, 15f), 0f)
-                StrokeStyle.SOLID -> null
-            }
+            paint.pathEffect = StrokePathEffect.create(this.shapeStyle, this.shapeSize)
         }
 
         return paint

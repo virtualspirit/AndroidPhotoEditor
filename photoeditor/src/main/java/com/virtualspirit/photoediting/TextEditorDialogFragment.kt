@@ -129,7 +129,7 @@ class TextEditorDialogFragment : DialogFragment(), SeekBar.OnSeekBarChangeListen
         mAddTextEditText.setText(arguments.getString(EXTRA_INPUT_TEXT))
         mTextColor = arguments.getInt(EXTRA_COLOR_CODE)
         mBackgroundColor = arguments.getInt(EXTRA_BACKGROUND_COLOR_CODE, Color.TRANSPARENT)
-        mTextSize = arguments.getFloat(EXTRA_TEXT_SIZE, 36f)
+        mTextSize = arguments.getFloat(EXTRA_TEXT_SIZE, 32f)
         mAddTextEditText.setTextColor(mTextColor)
         mAddTextEditText.setBackgroundColor(mBackgroundColor)
         mAddTextEditText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, mTextSize)
@@ -189,7 +189,7 @@ class TextEditorDialogFragment : DialogFragment(), SeekBar.OnSeekBarChangeListen
             inputText: String = "",
             @ColorInt colorCode: Int = ContextCompat.getColor(appCompatActivity, R.color.white),
             @ColorInt backgroundColor: Int = Color.TRANSPARENT,
-            textSize: Float = 36f,
+            textSize: Float = 32f,
             customColors: IntArray? = null,
             defaultTextColor: Int? = null,
             defaultFontFamily: String? = null,

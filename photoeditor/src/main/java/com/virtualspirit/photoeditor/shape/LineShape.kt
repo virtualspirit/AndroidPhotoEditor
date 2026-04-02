@@ -51,7 +51,9 @@ class LineShape(
 
         path.moveTo(left, top)
         path.lineTo(right, bottom)
-        path.close()
+        // Do NOT call path.close() — closing a line retraces it (A→B→A), which
+        // doubles the path length and causes DashPathEffect to overlap itself,
+        // making dashed/dotted strokes appear solid.
 
         return path
     }

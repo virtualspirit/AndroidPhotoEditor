@@ -3,7 +3,6 @@ package com.virtualspirit.photoeditor.shape
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.DashPathEffect
 import android.graphics.Paint
 import android.graphics.Path
 import android.util.AttributeSet
@@ -141,13 +140,6 @@ class ShapeView @JvmOverloads constructor(
         currentShapeType == ShapeType.Oval || currentShapeType == ShapeType.Rectangle
 
     private fun applyPathEffect(strokeWidth: Float) {
-        val w = strokeWidth.coerceAtLeast(1f)
-        // With ROUND cap: visual dash length = on + w, visual gap = off - w
-        // off = w * 3f → visual gap = 2w at every stroke size
-        paint.pathEffect = when (currentStyle) {
-            StrokeStyle.DASHED -> DashPathEffect(floatArrayOf(w * 2.5f, w * 3f), 0f)
-            StrokeStyle.DOTTED -> DashPathEffect(floatArrayOf(1f, w * 3.5f), 0f)
-            StrokeStyle.SOLID -> null
-        }
+        paint.pathEffect = StrokePathEffect.create(currentStyle, strokeWidth)
     }
 }

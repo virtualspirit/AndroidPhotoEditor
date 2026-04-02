@@ -29,9 +29,9 @@ class TopPaletteDialogFragment : DialogFragment() {
 
     companion object {
         private const val ARG_CURRENT_STROKE_WIDTH = "current_stroke_width"
-        const val STROKE_SMALL = 10f
-        const val STROKE_MEDIUM = 25f
-        const val STROKE_LARGE = 50f
+        const val STROKE_SMALL = 6f
+        const val STROKE_MEDIUM = 18f
+        const val STROKE_LARGE = 30f
 
         private const val ARG_CURRENT_STROKE_STYLE = "current_stroke_style"
         private const val ARG_CUSTOM_COLORS = "custom_colors"
