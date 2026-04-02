@@ -1,167 +1,111 @@
-# Publishing Guide
+# Build & Publish Guide
 
-This document explains how to publish a new version of the `photoeditor` library — both automatically via GitHub Actions and manually from your local machine.
+This library is distributed via **JitPack**. Publishing a new version means:
+1. Bumping the version in the relevant files
+2. Committing and pushing to the default branch
+3. Creating and pushing a Git tag — this triggers GitHub Actions, which builds the AAR and creates a GitHub Release; JitPack then picks up the tag automatically
 
 ---
 
-## Files to update before publishing
+## Step 1 — Bump the version
+
+Update the version string in these three places:
 
 | File | Field | Example |
 |---|---|---|
-| `photoeditor/build.gradle` | `PUBLISH_VERSION` | `'3.1.7'` |
-| `app/build.gradle` | `versionName` | `"3.1.7"` |
+| `photoeditor/build.gradle` | `PUBLISH_VERSION` | `'3.1.8'` |
+| `app/build.gradle` | `versionName` | `"3.1.8"` |
 | `app/build.gradle` | `versionCode` | increment by 1 |
-| `README.md` | JitPack dependency line | `v3.1.7` |
+| `README.md` | JitPack dependency line | `v3.1.8` |
 
 ---
 
-## Option 1 — Automatic via GitHub Actions (recommended)
-
-The workflow in `.github/workflows/release.yml` triggers automatically when a Git tag matching `v*.*.*` is pushed. It builds the release AAR and uploads it to GitHub Releases.
-
-### Steps
+## Step 2 — Commit and push
 
 ```bash
-# 1. Make sure all version fields above are updated and committed
 git add photoeditor/build.gradle app/build.gradle README.md
-git commit -m "chore: bump version to 3.1.7"
-
-# 2. Push the commit
-git push origin main
-
-# 3. Create and push the version tag
-git tag v3.1.7
-git push origin v3.1.7
+git commit -m "chore: bump version to 3.1.8"
+git push origin <your-branch>
 ```
 
-GitHub Actions will then:
-1. Build `photoeditor-release.aar`
-2. Create a GitHub Release named `v3.1.7`
-3. Attach the AAR as a release asset
-4. Auto-generate release notes from merged PRs/commits
+Make sure you push to the branch that is set as default on GitHub (currently `default-config`), otherwise JitPack will not resolve the correct code.
 
-After the release is created, JitPack will automatically pick up the new tag and make it available as:
+---
+
+## Step 3 — Create and push the tag
+
+```bash
+git tag v3.1.8
+git push origin v3.1.8
+```
+
+This triggers the GitHub Actions workflow (`.github/workflows/release.yml`), which:
+1. Builds `photoeditor-release.aar`
+2. Creates a GitHub Release named `v3.1.8`
+3. Attaches the AAR as a downloadable release asset
+4. Auto-generates release notes from commits
+
+---
+
+## Step 4 — Verify on JitPack
+
+JitPack builds on first request after the tag is published. Trigger and monitor the build at:
+
+```
+https://jitpack.io/#virtualspirit/AndroidPhotoEditor/v3.1.8
+```
+
+Once the build turns green, the dependency is available:
 
 ```gradle
-implementation 'com.github.virtualspirit:AndroidPhotoEditor:v3.1.7'
+implementation 'com.github.virtualspirit:AndroidPhotoEditor:v3.1.8'
 ```
 
 ---
 
-## Option 2 — Manual from local machine
+## Building locally
 
-Use this when you need to publish without pushing a tag, or when CI is unavailable.
+To build the release AAR without publishing:
 
-### Prerequisites
-
-#### 1. Java 17
-The build requires Java 17. Verify with:
-```bash
-java -version
-```
-If needed, install via [Adoptium](https://adoptium.net/) or SDKMAN:
-```bash
-sdk install java 17-zulu
-sdk use java 17-zulu
-```
-
-#### 2. GPG signing key
-The library must be signed before publishing to Maven Central.
-
-```bash
-# List your keys
-gpg --list-secret-keys --keyid-format SHORT
-
-# Export the secret keyring (replace KEY_ID with your 8-char key ID)
-gpg --export-secret-keys KEY_ID > ~/.gnupg/secring.gpg
-```
-
-#### 3. Sonatype (OSSRH) account
-You need an account at [https://issues.sonatype.org](https://issues.sonatype.org) with write access to the `com.virtualspirit` group.
-
-#### 4. Configure `local.properties`
-Add the following to `local.properties` in the project root (this file is git-ignored):
-
-```properties
-# GPG signing
-signing.keyId=XXXXXXXX          # last 8 chars of your GPG key ID
-signing.password=your_gpg_passphrase
-signing.secretKeyRingFile=/Users/yourname/.gnupg/secring.gpg
-
-# Sonatype OSSRH credentials
-ossrhUsername=your_sonatype_username
-ossrhPassword=your_sonatype_password
-
-# Sonatype staging profile ID
-# Find it at: https://s01.oss.sonatype.org → Staging Profiles → select com.virtualspirit → copy the ID from the URL
-sonatypeStagingProfileId=XXXXXXXXXXXXXXXX
-```
-
----
-
-### Build and publish steps
-
-#### Step 1 — Build the release AAR
 ```bash
 ./gradlew :photoeditor:assembleRelease
 ```
+
 Output: `photoeditor/build/outputs/aar/photoeditor-release.aar`
 
-#### Step 2 — Publish to Sonatype staging repository
-```bash
-./gradlew :photoeditor:publishReleasePublicationToSonatypeRepository
-```
-This uploads the signed AAR + sources JAR to a new staging repository at `s01.oss.sonatype.org`.
+To test the AAR in another local project, publish to your local Maven cache:
 
-#### Step 3 — Close the staging repository
-```bash
-./gradlew closeAndReleaseRepository
-```
-This closes the staging repo (runs validation checks) and releases it to Maven Central. The artifact will appear on Maven Central within 10–30 minutes.
-
-#### Step 4 — (Optional) Publish to local Maven for testing
 ```bash
 ./gradlew :photoeditor:publishToMavenLocal
 ```
-Then reference it in another local project:
+
+Then in the consuming project:
+
 ```gradle
 repositories { mavenLocal() }
 dependencies {
-    implementation 'com.virtualspirit:photoeditor:3.1.7'
+    implementation 'com.virtualspirit:photoeditor:3.1.8'
 }
 ```
 
-#### Step 5 — Tag the release on Git
-```bash
-git tag v3.1.7
-git push origin v3.1.7
-```
-This creates the GitHub Release entry and makes the tag available on JitPack.
-
 ---
 
-## Verifying the release
+## Requirements
 
-| Channel | URL |
-|---|---|
-| GitHub Release | `https://github.com/virtualspirit/AndroidPhotoEditor/releases/tag/v3.1.7` |
-| JitPack | `https://jitpack.io/#virtualspirit/AndroidPhotoEditor/v3.1.7` |
-| Maven Central | `https://central.sonatype.com/artifact/com.virtualspirit/photoeditor/3.1.7` |
+- **Java 17** — required by the build. Verify with `java -version`.
+- **Android SDK** — set via `ANDROID_HOME` or `local.properties`.
 
 ---
 
 ## Troubleshooting
 
-**`Signature validation failed`**
-- Make sure `signing.secretKeyRingFile` points to the correct `.gpg` file.
-- Verify `signing.keyId` is exactly 8 characters (the short form).
-
-**`401 Unauthorized` on Sonatype**
-- Double-check `ossrhUsername` and `ossrhPassword` in `local.properties`.
-
-**`Repository is already released`**
-- The version already exists on Maven Central. You cannot overwrite a published version — bump the version number.
+**GitHub Actions did not trigger**
+- The workflow only fires on a tag push matching `v*.*.*`. Make sure you pushed the tag with `git push origin vX.Y.Z`, not just the branch.
 
 **JitPack build fails**
-- Check the build log at `https://jitpack.io/#virtualspirit/AndroidPhotoEditor/v3.1.7`.
-- Ensure the tag exists on GitHub before triggering a JitPack build.
+- Check the build log at `https://jitpack.io/#virtualspirit/AndroidPhotoEditor/vX.Y.Z`.
+- Ensure the tag exists on GitHub and points to a commit that compiles cleanly.
+- Confirm that `PUBLISH_VERSION` in `photoeditor/build.gradle` matches the tag.
+
+**Old version still resolving**
+- Gradle caches dependencies aggressively. Run `./gradlew --refresh-dependencies` in the consuming project.
